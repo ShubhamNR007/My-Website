@@ -76,6 +76,16 @@ const allPostsByDate = sortMDByDate(allPosts).slice(0, MAX_POSTS)
         <SkillLayout title='Frameworks' skills={frameworks} />
       </Section>
 
+      <Section title='PortSwigger'>
+        <Card
+          as='a'
+          heading='Advanced security testing & exploit development'
+          subheading='Explore detailed solutions to PortSwigger Web Security Academy labs with a focus on custom exploit scripts, edge-case testing, and developer-focused remediation notes.'
+          date=''
+          href='/portswigger-labs'
+        />
+      </Section>
+
       {
         allPostsByDate.length > 0 && (
           <Section title='Posts'>
@@ -90,16 +100,6 @@ const allPostsByDate = sortMDByDate(allPosts).slice(0, MAX_POSTS)
           </Section>
         )
       }
-
-      <Section title='PortSwigger'>
-        <Card
-          as='a'
-          heading='Advanced security testing & exploit development'
-          subheading='Explore detailed solutions to PortSwigger Web Security Academy labs with a focus on custom exploit scripts, edge-case testing, and developer-focused remediation notes.'
-          date=''
-          href='/docs'
-        />
-      </Section>
       
     </div>
    
