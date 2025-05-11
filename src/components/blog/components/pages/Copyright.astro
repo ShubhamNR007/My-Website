@@ -22,7 +22,7 @@ const shares = {
   x: {
     link: `https://x.com/intent/tweet?text='${title}'&url='${Astro.url}'&via='${config.author}'`
   }
-} as const
+} as const;
 ---
 
 <div
@@ -86,7 +86,7 @@ const shares = {
       </button>
       {
         config.content.share
-          .filter((share) => shares[share]) // filter out undefined
+          .filter((share) => share in shares) // Only include valid keys in the shares object
           .map((share) => (
             <a
               href={shares[share].link}
