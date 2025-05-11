@@ -16,11 +16,16 @@ const docsByCate = docsCollection.reduce((acc: { [key: string]: typeof docsColle
   return acc
 }, {})
 
-const docCategories = {
-  setup: 'Setup',
-  integrations: 'Integrations',
-  advanced: 'Advanced'
+const docCategories: Record<string, string> = {}
+
+for (const doc of docsCollection) {
+  const folder = doc.id.split('/')[0]
+  if (!(folder in docCategories)) {
+    // Capitalize the folder name for display (e.g., 'api' -> 'Api')
+    docCategories[folder] = folder.charAt(0).toUpperCase() + folder.slice(1)
+  }
 }
+
 
 type Props = {
   title?: boolean
