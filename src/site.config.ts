@@ -48,7 +48,7 @@ export const theme: ThemeUserConfig = {
   header: {
     menu: [
       { title: 'Blog', link: '/blog' },
-      { title: 'Portswigger-Labs', link: '/docs' },
+      { title: 'Portswigger-Labs', link: '/portswigger-labs' },
       { title: 'About', link: '/about' }
     ]
   },

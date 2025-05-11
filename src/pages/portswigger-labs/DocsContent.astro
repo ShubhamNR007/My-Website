@@ -40,7 +40,7 @@ const { title = true, class: className, ...props } = Astro.props
           <ul class='mt-2 flex flex-col gap-y-1 border-l-3 ml-1 pl-3'>
             {docsByCate[id].map((doc) => (
               <li class='text-foreground'>
-                <a href={`/docs/${doc.id}`}>{doc.data.title}</a>
+                <a href={`/portswigger-labs/${doc.id}`}>{doc.data.title}</a>
               </li>
             ))}
           </ul>

@@ -6,7 +6,7 @@ import { TOC } from 'astro-pure/components/pages'
 import { getBlogCollection, sortMDByDate } from 'astro-pure/server'
 import { CardList } from 'astro-pure/user'
 import PageLayout from '@/layouts/ContentLayout.astro'
-import { docs } from '@/pages/docs/docsContents'
+import { docs } from '@/pages/portswigger-labs/docsContents'
 
 import DocsContent from './DocsContent.astro'
 
@@ -29,7 +29,7 @@ const { Content, headings } = await render(post)
 const { description, title } = post.data
 ---
 
-<PageLayout meta={{ description, title }} back='/docs'>
+<PageLayout meta={{ description, title }} back='/portswigger-labs'>
   <Fragment slot='sidebar'>
     {!!headings.length && <TOC {headings} />}
     <DocsContent class='docs-toc block mt-3' />
@@ -54,7 +54,7 @@ const { description, title } = post.data
 
   <Content />
 
-  <CardList {...docs} title='See more docs' class='mt-5' slot='bottom' />
+  <CardList {...docs} title='See more portswigger-labs' class='mt-5' slot='bottom' />
 </PageLayout>
 <MediumZoom />
 
