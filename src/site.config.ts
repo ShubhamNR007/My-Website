@@ -114,7 +114,7 @@ export const integ: IntegrationUserConfig = {
   },
   // Comment system
   waline: {
-    enable: false,
+    enable: true,
     server: 'https://astro-theme-pure-waline.arthals.ink/',
     emoji: ['bmoji', 'weibo'],
     additionalConfigs: {
