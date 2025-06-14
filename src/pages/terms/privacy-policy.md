@@ -28,4 +28,4 @@ You may contact us at any time to request deletion of your data or inquire about
 
 This policy may be updated periodically. Changes will be posted here with the updated effective date.
 
-For questions, email: shubhamranpise@gmail.com  
+For questions, email: shubhamrnps@gmail.com  
