@@ -1,0 +1,107 @@
+---
+import { Image } from 'astro:assets'
+
+import { Quote } from 'astro-pure/advanced'
+import { PostPreview } from 'astro-pure/components/pages'
+import { getBlogCollection, sortMDByDate } from 'astro-pure/server'
+import { Button, Card, Icon, Label } from 'astro-pure/user'
+import PageLayout from '@/layouts/BaseLayout.astro'
+import ProjectCard from '@/components/home/ProjectCard.astro'
+import Section from '@/components/home/Section.astro'
+import SkillLayout from '@/components/home/SkillLayout.astro'
+import avatar from '@/assets/avatar.png'
+import config from '@/site-config'
+
+const languages = ['Python', 'Bash', 'C', 'SQL']
+const security_tools = ['Burp Suite', 'Nmap', 'Metasploit', 'Wireshark', 'Kali Linux', 'OWASP ZAP', 'Nessus', 'Netcat', 'Hydra', 'Gobuster']
+const penetration_testing = ['VAPT', 'Network Penetration Testing', 'Web Application Penetration Testing', 'API Penetration Testing', 'Active Directory Attacks', 'Privilege Escalation', 'Exploitation', 'Pivoting & Tunneling']
+const certifications = ['OSCP', 'eJPT']
+const frameworks = ['OWASP Top 10']
+
+const MAX_POSTS = 10
+const allPosts = await getBlogCollection()
+const allPostsByDate = sortMDByDate(allPosts).slice(0, MAX_POSTS)
+---
+
+<PageLayout meta={{ title: 'Home' }} highlightColor='#659EB9'>
+  <main class='flex w-full flex-col items-center'>
+  
+    <section class='animate flex flex-col items-center gap-y-7 min-h-screen justify-center -mt-14' id='content-header'>
+    <section class='animate mb-10 flex flex-col items-center gap-y-7' id='content-header'>
+      <Image
+        src={avatar}
+        alt='profile'
+        class='h-52 w-auto rounded-full border p-1'
+        loading='eager'
+      />
+
+      <div class='flex flex-col items-center gap-y-4'>
+        <h1 class='text-3xl font-bold'>{config.author}</h1>
+        <div class='flex flex-wrap justify-center gap-x-7 gap-y-3'>
+        </div>
+      </div>
+
+      {/* Get template */}
+      <a
+        href='/resume/resume.pdf'
+        target='_blank'
+        class='flex flex-row items-center gap-x-3 rounded-full border bg-background px-4 py-2 text-sm shadow-sm transition-shadow hover:shadow-md'
+      >
+        <span class='relative flex items-center justify-center'>
+          <span
+            class='absolute size-2 animate-ping rounded-full border border-green-400 bg-green-400 opacity-75'
+          ></span>
+          <span class='size-2 rounded-full bg-green-400'></span>
+        </span>
+        <p class='font-medium text-muted-foreground'>Hire Me</p>
+      </a>
+    </section>
+    </section>
+
+    <div id='content' class='animate flex flex-col gap-y-10 md:w-4/5 lg:w-5/6'>
+      <Section title='About'>
+        <p class='text-muted-foreground'>Cyber Security Researcher | Penetration Tester</p>
+        <p class='text-muted-foreground'>
+          I specialize in Web, API, and Active Directory Pentesting with a focus on practical offensive security.
+        I'm currently working as a Cyber Defense & IR Analyst at KPMG India, where I handle AppSec, Firewall Access Review, and developer training initiatives.  
+        </p>
+        <Button title='More about me' class='w-fit self-end' href='/about' style='ahead' />
+      </Section>
+
+      <Section title='Skills'>
+        <SkillLayout title='Languages' skills={languages} />
+        <SkillLayout title='Security Tools' skills={security_tools} />
+        <SkillLayout title='Penetration Testing' skills={penetration_testing} />
+        <SkillLayout title='Certifications' skills={certifications} />
+        <SkillLayout title='Frameworks' skills={frameworks} />
+      </Section>
+
+      <Section title='PortSwigger'>
+        <Card
+          as='a'
+          heading='Advanced security testing & exploit development'
+          subheading='Explore detailed solutions to PortSwigger Web Security Academy labs with a focus on custom exploit scripts, edge-case testing, and developer-focused remediation notes.'
+          date=''
+          href='/portswigger-labs'
+        />
+      </Section>
+
+      {
+        allPostsByDate.length > 0 && (
+          <Section title='Posts'>
+            <ul class='flex flex-col gap-y-1.5 sm:gap-y-2'>
+              {allPostsByDate.map((p) => (
+                <li class='flex flex-col gap-x-2 sm:flex-row'>
+                  <PostPreview post={p} />
+                </li>
+              ))}
+            </ul>
+            <Button title='More posts' class='w-fit self-end' href='/blog' style='ahead' />
+          </Section>
+        )
+      }
+      
+    </div>
+   
+  </main>
+</PageLayout>

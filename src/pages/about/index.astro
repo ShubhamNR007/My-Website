@@ -1,0 +1,126 @@
+---
+import { Button, Collapse, Spoiler, Timeline } from 'astro-pure/user'
+import PageLayout from '@/layouts/CommonPage.astro'
+import ToolSection from '@/components/about/ToolSection.astro'
+
+const headings = [
+  { depth: 2, slug: 'about-blog', text: 'My Journey' },
+  { depth: 2, slug: 'tools', text: 'Certifications' },
+  { depth: 2, slug: 'social-networks', text: 'Social Networks' }
+]
+---
+
+<PageLayout title='About' {headings}>
+  <p>Cyber Security Researcher | Penetration Tester</p>
+  <p>
+       I specialize in Web, API, and Active Directory Pentesting with a focus on practical offensive security.
+        I'm currently working as a Cyber Defense & IR Analyst at KPMG India, where I handle AppSec, Firewall Access Review, and developer training initiatives.  
+  </p>
+<!--  <p>My motto: Stay hungry, Stay foolish. <Spoiler>这里可以夹私货</Spoiler></p> -->
+  <Button title='Hire Me' class='w-fit' href='/resume/resume.pdf' style='ahead' target='_blank' />
+
+<!--
+  {/* general-talk */}
+  <h2 id='hobbies'>Hobbies</h2>
+  <ul>
+    <li>Lorem ipsum dolor sit amet, vidit suscipit at mei.</li>
+    <li>
+      Quem denique mea id. Usu ei regione indoctum dissentiunt, cu meliore fuisset mei, vel quod
+      voluptua ne.
+    </li>
+    <li>Ex dicat impedit mel, at eum oratio possit voluptatum.</li>
+    <li>Impetus fuisset ullamcorper pri cu, his posse iisque ad, aliquam honestatis usu id.</li>
+  </ul>
+-->
+
+  {/* about-blog */}
+  <h2 id='about-blog'>My Journey</h2>
+  <p>Work Experience:</p>
+  <Timeline
+    events={[
+      {
+        date: 'Sep 2024-Present :',
+        content:
+          'Joined <a href="https://kpmg.com/in/en.html" target="_blank">KPMG India</a> as a DT-Cyber Defense & IR Analyst'
+      },
+      {
+        date: 'Jun 2024-Sep 2024 :',
+        content:
+          'Joined <a href="https://securelayer7.net/home"target="_blank">Securelayer7</a> as a Security Consultant Intern.'
+      }
+    ]}
+  />
+  <p>Formal Education:</p>
+  <Timeline
+    events={[
+      {
+        date: '2021-2024 :',
+        content:
+          'Bachelor of Business Administration - Computer Application [BBA-CA]'
+      },
+      {
+        date: '2019-2020 :',
+        content:
+          '12th Science HSC'
+      }
+    ]}
+  />
+
+  {/* tools */}
+  <h2 id='tools'>Certifications</h2>
+  <p></p>
+  <ToolSection
+    class='mb-5'
+    title='Cyber Security'
+    tools={[
+      {
+        name: 'OSCP',
+        description: 'Offensive Security Certified Professional',
+        href: 'https://www.credential.net/54590d97-6f4e-414c-b400-909b275d175d#acc.ZwonVMlD',
+        icon: '/icons/oscp.png'
+      },
+      {
+        name: 'eJPT',
+        description: 'Junior Penetration Tester',
+        href: 'https://www.credential.net/d4950739-0625-4c70-9a5c-1174eb5eb119#acc.XuMZflCt',
+        icon: '/icons/ejpt.png'
+      }
+    ]}
+  />
+
+  {/* social-networks */}
+  <h2 id='social-networks'>Social Networks</h2>
+  <p>
+  </p>
+    <ToolSection
+    class='mb-5'
+    title='Drop me a line to chat AppSec!'
+    tools={[
+      {
+        name: 'GitHub',
+        description: 'ShubhamNR007',
+        href: 'https://github.com/ShubhamNR007',
+        icon: '/icons/github.png'
+      },
+      {
+        name: 'Linkedin',
+        description: 'shubham-ranpise',
+        href: 'https://www.linkedin.com/in/shubham-ranpise/',
+        icon: '/icons/linkedin.png'
+      },
+      {
+        name: 'X',
+        description: 'shubhamrnps',
+        href: 'https://x.com/shubhamrnps',
+        icon: '/icons/x.jpg'
+      },
+      {
+        name: 'Mail',
+        description: 'shubhamrnps@gmail.com',
+        href: 'mailto:shubhamrnps@gmail.com',
+        icon: '/icons/gmail.png'
+      }
+    ]}
+  />
+
+</PageLayout>

@@ -1,0 +1,56 @@
+---
+import { type CollectionEntry } from 'astro:content'
+
+import { getBlogCollection } from 'astro-pure/server'
+import { cn } from 'astro-pure/utils'
+
+export const prerender = true
+export const partial = true
+
+const docsCollection = (await getBlogCollection('docs')) as CollectionEntry<'docs'>[]
+// group docs by id first part (setup, integrations, advanced, etc.)
+const docsByCate = docsCollection.reduce((acc: { [key: string]: typeof docsCollection }, doc) => {
+  const id = doc.id.split('/')[0]
+  if (!acc[id]) acc[id] = [] as typeof docsCollection
+  acc[id].push(doc)
+  return acc
+}, {})
+
+const docCategories: Record<string, string> = {}
+
+for (const doc of docsCollection) {
+  const folder = doc.id.split('/')[0]
+  if (!(folder in docCategories)) {
+    // Capitalize the folder name for display (e.g., 'api' -> 'Api')
+    docCategories[folder] = folder.charAt(0).toUpperCase() + folder.slice(1)
+  }
+}
+
+
+type Props = {
+  title?: boolean
+  class?: string
+}
+
+const { title = true, class: className, ...props } = Astro.props
+---
+
+<docs-toc class={cn('not-prose', className)} {...props}>
+  {title && <h2 class='text-foreground font-semibold'>Browse Labs</h2>}
+  <ul class='mt-4 flex flex-col gap-y-5'>
+    {
+      Object.entries(docCategories).map(([id, title]: [string, string]) => (
+        <li>
+          <h3 class='text-muted-foreground text-xs tracking-widest uppercase'>{title}</h3>
+          <ul class='mt-2 flex flex-col gap-y-1 border-l-3 ml-1 pl-3'>
+            {docsByCate[id].map((doc) => (
+              <li class='text-foreground'>
+                <a href={`/portswigger-labs/${doc.id}`}>{doc.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))
+    }
+  </ul>
+</docs-toc>
