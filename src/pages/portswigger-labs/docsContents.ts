@@ -26,7 +26,20 @@ export const docs: CardListData = {
         { title: 'SQL injection vulnerability allowing login bypass', link: '/portswigger-labs/sqli/sqli2' },
         { title: 'SQL injection attack, querying the database type and version on Oracle', link: '/portswigger-labs/sqli/sqli3' },
         { title: 'SQL Injection: Extracting Database Type and Version', link: '/portswigger-labs/sqli/sqli4' },
-        { title: 'SQL Injection Attack — Listing Database Contents on Non-Oracle Databases', link: '/portswigger-labs/sqli/sqli5' }
+        { title: 'SQL Injection Attack — Listing Database Contents on Non-Oracle Databases', link: '/portswigger-labs/sqli/sqli5' },
+        { title: 'SQL injection attack, listing the database contents on Oracle', link: '/portswigger-labs/sqli/sqli6' },
+        { title: 'SQL injection UNION attack, determining the number of columns returned by the query', link: '/portswigger-labs/sqli/sqli7' },
+        { title: 'SQL injection UNION attack, finding a column containing text', link: '/portswigger-labs/sqli/sqli8' },
+        { title: 'SQL injection UNION attack, retrieving data from other tables', link: '/portswigger-labs/sqli/sqli9' },
+        { title: 'SQL injection UNION attack, retrieving multiple values in a single column', link: '/portswigger-labs/sqli/sqli10' },
+        { title: 'Blind SQL injection with conditional responses', link: '/portswigger-labs/sqli/sqli11' },
+        { title: 'Blind SQL injection with conditional errors', link: '/portswigger-labs/sqli/sqli12' },
+        { title: 'Visible error-based SQL injection', link: '/portswigger-labs/sqli/sqli13' },
+        { title: 'Blind SQL injection with time delays', link: '/portswigger-labs/sqli/sqli14' },
+        { title: 'Blind SQL injection with time delays and information retrieval', link: '/portswigger-labs/sqli/sqli15' },
+        { title: 'Blind SQL injection with out-of-band interaction', link: '/portswigger-labs/sqli/sqli16' },
+        { title: 'Blind SQL injection with out-of-band data exfiltration', link: '/portswigger-labs/sqli/sqli17' },
+        { title: 'SQL injection with filter bypass via XML encoding', link: '/portswigger-labs/sqli/sqli18' }
       ]
     }
   ]
