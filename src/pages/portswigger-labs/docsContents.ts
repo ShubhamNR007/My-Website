@@ -41,6 +41,17 @@ export const docs: CardListData = {
         { title: 'Blind SQL injection with out-of-band data exfiltration', link: '/portswigger-labs/sqli/sqli17' },
         { title: 'SQL injection with filter bypass via XML encoding', link: '/portswigger-labs/sqli/sqli18' }
       ]
+    },
+    {
+      title: 'Cross-site scripting (XSS)',
+      children: [
+        { title: 'Reflected XSS into HTML context with nothing encoded', link: '/portswigger-labs/xss/xss1' },
+        { title: 'Stored XSS into HTML context with nothing encoded', link: '/portswigger-labs/xss/xss2' },
+        { title: 'DOM XSS in document.write sink using source location.search', link: '/portswigger-labs/xss/xss3' },
+        { title: 'DOM XSS in innerHTML sink using source location.search', link: '/portswigger-labs/xss/xss4' },
+        { title: 'DOM XSS in jQuery anchor href attribute sink using location.search source', link: '/portswigger-labs/xss/xss5' },
+        { title: 'DOM XSS in jQuery selector sink using a hashchange event', link: '/portswigger-labs/xss/xss6' }
+      ]
     }
   ]
 }
