@@ -50,7 +50,8 @@ export const docs: CardListData = {
         { title: 'DOM XSS in document.write sink using source location.search', link: '/portswigger-labs/xss/xss3' },
         { title: 'DOM XSS in innerHTML sink using source location.search', link: '/portswigger-labs/xss/xss4' },
         { title: 'DOM XSS in jQuery anchor href attribute sink using location.search source', link: '/portswigger-labs/xss/xss5' },
-        { title: 'DOM XSS in jQuery selector sink using a hashchange event', link: '/portswigger-labs/xss/xss6' }
+        { title: 'DOM XSS in jQuery selector sink using a hashchange event', link: '/portswigger-labs/xss/xss6' },
+        { title: 'Reflected XSS into attribute with angle brackets HTML-encoded', link: '/portswigger-labs/xss/xss7' }
       ]
     }
   ]
