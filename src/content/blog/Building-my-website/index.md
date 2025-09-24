@@ -5,7 +5,7 @@ description: 'A step-by-step look at how I built my personal cybersecurity websi
 tags:
   - Web Development
   - Cybersecurity
-heroImage: { src: './thumbnail.jpg', color: '#6A4C9C' }
+heroImage: { src: './thumbnail.jpg', color: '#00FFFF' }
 language: 'English'
 ---
 
