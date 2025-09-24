@@ -87,7 +87,7 @@ Automation is seductive. Once I learned the manual steps, the urge to script the
 1. **Verify manually.** Confirm the vulnerability with Burp. Understand the app’s responses.
 2. **Automate carefully.** Scripts became reproducible experiments: they logged every step, handled transient errors, and included clear comments about intent and safe use.
 
-My automation work never replaced manual testing; it amplified it. Scripts let me iterate faster and forced me to think about edge cases I might otherwise ignore: HTML encoding differences, pagination quirks, or unexpected server-side normalization.
+My automation work never replaced manual testing; it amplified it. Scripts let me iterate faster and forced me to think about edge cases I might otherwise ignore.
 
 ---
 
