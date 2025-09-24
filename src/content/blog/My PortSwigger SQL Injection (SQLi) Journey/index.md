@@ -104,12 +104,10 @@ My automation work never replaced manual testing; it amplified it. Scripts let m
 
 SQL Injection is old, but it is stubborn. It survives in corners of codebases where creativity meets haste and configuration meets convenience. Solving these 18 PortSwigger labs didn’t make me infallible. It did something better: it taught me to ask better questions, to be patient with ambiguity, and to build tooling that respects both efficiency and ethics.
 
-If you want the full, kitchen-sink writeups or the Python PoCs I used to automate extractions, you’ll find everything in my lab index and GitHub repo. I publish those artifacts for learning and for helping developers reproduce and fix issues in their own code — never for attacking systems without permission.
+If you want the full, kitchen-sink writeups or the Python PoCs I used to automate extractions, you’ll find everything in my lab index and GitHub repo.
 
 - [My PortSwigger lab index(Writeups)](https://shubhamranpise.com/portswigger-labs)  
 - [My exploit scripts(Exploits)](https://github.com/ShubhamNR007/portswigger-labs-exploits/tree/main/SQLi)
-
-Thanks for reading. If you’ve solved similar labs, I’d love to hear your slowest victory or your best defensive push — every story sharpens the next one.
 
 ---
 
