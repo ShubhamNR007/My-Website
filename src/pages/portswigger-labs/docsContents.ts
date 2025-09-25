@@ -52,7 +52,8 @@ export const docs: CardListData = {
         { title: 'DOM XSS in jQuery anchor href attribute sink using location.search source', link: '/portswigger-labs/xss/xss5' },
         { title: 'DOM XSS in jQuery selector sink using a hashchange event', link: '/portswigger-labs/xss/xss6' },
         { title: 'Reflected XSS into attribute with angle brackets HTML-encoded', link: '/portswigger-labs/xss/xss7' },
-        { title: 'Stored XSS into anchor href attribute with double quotes HTML-encoded', link: '/portswigger-labs/xss/xss8' }
+        { title: 'Stored XSS into anchor href attribute with double quotes HTML-encoded', link: '/portswigger-labs/xss/xss8' },
+        { title: 'Reflected XSS into a JavaScript string with angle brackets HTML encoded', link: '/portswigger-labs/xss/xss9' }
       ]
     }
   ]
