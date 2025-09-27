@@ -9,6 +9,8 @@ export const docs: CardListData = {
       children: [
         { title: 'Exploiting an API endpoint using documentation', link: '/portswigger-labs/api/api1' },
         { title: 'Exploiting server-side parameter pollution in a query string', link: '/portswigger-labs/api/api2' },
+        { title: 'Finding and exploiting an unused API endpoint', link: '/portswigger-labs/api/api3' },
+        { title: 'Exploiting a mass assignment vulnerability', link: '/portswigger-labs/api/api4' },
         { title: 'Exploiting server-side parameter pollution in a REST URL', link: '/portswigger-labs/api/api5' }
       ]
     },

