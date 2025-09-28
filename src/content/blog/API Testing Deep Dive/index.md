@@ -12,6 +12,8 @@ heroImage:
 language: 'English'
 ---
 
+<div style="text-align: justify;">
+
 APIs (Application Programming Interfaces) enable software systems to communicate, but they also expand the attack surface. API testing focuses on discovering endpoints, understanding request/response formats, and probing for weaknesses. Vulnerabilities in APIs can undermine a system’s confidentiality, integrity and availability. OWASP’s API Security Top 10 (2023) highlights issues like broken object-level authorization, broken authentication, SSRF (Server-Side Request Forgery) and security misconfiguration as top risks. This guide covers both modern REST/JSON APIs and classic SOAP/XML APIs from a mid-to-advanced AppSec perspective, integrating key points and a built-in “cheat sheet” of test ideas.
 
 ## Reconnaissance and Documentation
@@ -114,6 +116,7 @@ Use a mix of manual and automated tools. Burp Suite (Repeater, Intruder, Scanner
 API testing demands a holistic approach: treat every endpoint as potential attack surface, and apply both standard web tests and API-specific checks. By combining thorough reconnaissance (endpoints, docs), active probing (methods, content types, injection), and business logic abuse (mass assignment, SSRF, resource limits), you can uncover critical flaws. The PortSwigger API labs and accompanying guides demonstrate these principles in action. Use the above checklist as a cheat sheet for future reference. In-depth API testing is a cornerstone of modern AppSec, and mastery of these techniques will greatly strengthen your security posture.
 
 If you want the full, kitchen-sink writeups or the Python PoCs I used to automate extractions, you’ll find everything in my lab index and GitHub repo.
+</div>
 
 - [Official Portswigger Labs](https://portswigger.net/web-security/all-labs#api-testing)
 - [My PortSwigger lab index(Writeups)](https://shubhamranpise.com/portswigger-labs)  

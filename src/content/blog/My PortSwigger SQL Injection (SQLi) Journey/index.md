@@ -3,12 +3,14 @@ title: "My PortSwigger SQL Injection (SQLi) Journey"
 publishDate: 2025-09-24 08:00:00
 description: "How I solved 18 SQLi labs from PortSwigger Web Security Academy, what I learned, and how I automated the exploits with Python."
 tags:
-  - PortSwigger
   - SQL Injection
+  - PortSwigger
   - Web Security
 heroImage: { src: './sqli-thumbnail.jpg', color: '#F37F2E' }
 language: 'English'
 ---
+
+<div style="text-align: justify;">
 
 ## Introduction — A small confession
 
@@ -104,6 +106,7 @@ My automation work never replaced manual testing; it amplified it. Scripts let m
 SQL Injection is old, but it is stubborn. It survives in corners of codebases where creativity meets haste and configuration meets convenience. Solving these 18 PortSwigger labs didn’t make me infallible. It did something better: it taught me to ask better questions, to be patient with ambiguity, and to build tooling that respects both efficiency and ethics.
 
 If you want the full, kitchen-sink writeups or the Python PoCs I used to automate extractions, you’ll find everything in my lab index and GitHub repo.
+</div>
 
 - [Official Portswigger Labs](https://portswigger.net/web-security/all-labs#sql-injection)
 - [My PortSwigger lab index(Writeups)](https://shubhamranpise.com/portswigger-labs)  

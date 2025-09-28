@@ -9,6 +9,8 @@ heroImage: { src: './thumbnail.jpg', color: '#00FFFF' }
 language: 'English'
 ---
 
+<div style="text-align: justify;">
+
 ## Introduction
 
 Building a personal website has been one of my key goals to centralize and showcase my work in cybersecurity. After months of refining my ideas, I decided to use a static site generator called [Astro](https://astro.build) to bring my vision to life.
@@ -91,6 +93,7 @@ Building this website has been a rewarding experience that allowed me to showcas
 I look forward to continuously adding content to the site, including blog posts, tutorials, and more in-depth research on cybersecurity topics. 
 
 Stay tuned, and feel free to check out my site to see the latest updates!
+</div>
 
 ---
 
