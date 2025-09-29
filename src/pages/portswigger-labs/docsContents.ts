@@ -56,7 +56,8 @@ export const docs: CardListData = {
         { title: 'Reflected XSS into attribute with angle brackets HTML-encoded', link: '/portswigger-labs/xss/xss7' },
         { title: 'Stored XSS into anchor href attribute with double quotes HTML-encoded', link: '/portswigger-labs/xss/xss8' },
         { title: 'Reflected XSS into a JavaScript string with angle brackets HTML encoded', link: '/portswigger-labs/xss/xss9' },
-        { title: 'DOM XSS in document.write sink using source location.search inside a select element', link: '/portswigger-labs/xss/xss10' }
+        { title: 'DOM XSS in document.write sink using source location.search inside a select element', link: '/portswigger-labs/xss/xss10' },
+        { title: 'DOM XSS in AngularJS expression with angle brackets and double quotes HTML-encoded', link: '/portswigger-labs/xss/xss11' }
       ]
     }
   ]
