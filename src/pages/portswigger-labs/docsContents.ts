@@ -59,7 +59,8 @@ export const docs: CardListData = {
         { title: 'DOM XSS in document.write sink using source location.search inside a select element', link: '/portswigger-labs/xss/xss10' },
         { title: 'DOM XSS in AngularJS expression with angle brackets and double quotes HTML-encoded', link: '/portswigger-labs/xss/xss11' },
         { title: 'Reflected DOM XSS', link: '/portswigger-labs/xss/xss12' },
-        { title: 'Stored DOM XSS', link: '/portswigger-labs/xss/xss13' }
+        { title: 'Stored DOM XSS', link: '/portswigger-labs/xss/xss13' },
+        { title: 'Reflected XSS into HTML context with most tags and attributes blocked', link: '/portswigger-labs/xss/xss14' }
       ]
     }
   ]
