@@ -63,7 +63,8 @@ export const docs: CardListData = {
         { title: 'Reflected XSS into HTML context with most tags and attributes blocked', link: '/portswigger-labs/xss/xss14' },
         { title: 'Reflected XSS into HTML context with all tags blocked except custom ones', link: '/portswigger-labs/xss/xss15' },
         { title: 'Reflected XSS with some SVG markup allowed', link: '/portswigger-labs/xss/xss16' },
-        { title: 'Reflected XSS in canonical link tag', link: '/portswigger-labs/xss/xss17' }
+        { title: 'Reflected XSS in canonical link tag', link: '/portswigger-labs/xss/xss17' },
+        { title: 'Reflected XSS into a JavaScript string with single quote and backslash escaped', link: '/portswigger-labs/xss/xss18' }
       ]
     }
   ]
