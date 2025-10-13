@@ -65,7 +65,8 @@ export const docs: CardListData = {
         { title: 'Reflected XSS with some SVG markup allowed', link: '/portswigger-labs/xss/xss16' },
         { title: 'Reflected XSS in canonical link tag', link: '/portswigger-labs/xss/xss17' },
         { title: 'Reflected XSS into a JavaScript string with single quote and backslash escaped', link: '/portswigger-labs/xss/xss18' },
-        { title: 'Reflected XSS into a JavaScript string with angle brackets and double quotes HTML-encoded and single quotes escaped', link: '/portswigger-labs/xss/xss19' }
+        { title: 'Reflected XSS into a JavaScript string with angle brackets and double quotes HTML-encoded and single quotes escaped', link: '/portswigger-labs/xss/xss19' },
+        { title: 'Stored XSS into onclick event with angle brackets and double quotes HTML-encoded and single quotes and backslash escaped', link: '/portswigger-labs/xss/xss20' }
       ]
     }
   ]
