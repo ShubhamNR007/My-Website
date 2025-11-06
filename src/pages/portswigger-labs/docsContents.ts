@@ -69,7 +69,8 @@ export const docs: CardListData = {
         { title: 'Stored XSS into onclick event with angle brackets and double quotes HTML-encoded and single quotes and backslash escaped', link: '/portswigger-labs/xss/xss20' },
         { title: 'Reflected XSS into a template literal with angle brackets, single, double quotes, backslash and backticks Unicode-escaped', link: '/portswigger-labs/xss/xss21' },
         { title: 'Exploiting cross-site scripting to steal cookies', link: '/portswigger-labs/xss/xss22' },
-        { title: 'Exploiting cross-site scripting to capture passwords', link: '/portswigger-labs/xss/xss23' }
+        { title: 'Exploiting cross-site scripting to capture passwords', link: '/portswigger-labs/xss/xss23' },
+        { title: 'Exploiting XSS to bypass CSRF defenses', link: '/portswigger-labs/xss/xss24' }
       ]
     }
   ]
