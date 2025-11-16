@@ -1,6 +1,6 @@
 ---
 title: "Modern CPU Security and How Developers Can Validate It"
-publishDate: 2025-11-07 08:00:00
+publishDate: 2025-11-16 08:00:00
 description: "A developer-focused guide to testing CPU-level mitigations, recon techniques, and reproducible labs for measuring speculative execution defenses."
 tags:
   - Hardware Security
@@ -311,17 +311,11 @@ When you submit the revised article, include this short acceptance checklist so 
 - Clear authorization notice and scope for testing appears near the lab.
 - Vendor checks and commands are benign and supported by references.
 
-## Closing note (transparency)
-I avoided providing low-level exploit code or explicit cache-timing loops. This keeps the content actionable for defensive validation while preventing dual-use misuse. If you want, I can:
-
-- Draft the lab as a step-by-step CE (capture-environment) lab document with placeholders (approved-only) and a statistical analysis script (Python) that consumes CSV data and outputs the metrics above.
-- Or generate a short appendix with example result tables and narrative interpretation for reviewers.
-
 
 </div>
 
 ---
 
-— Daisy Grace
+— [Daisy Grace](https://x.com/daisygrace475)
 
 ---
