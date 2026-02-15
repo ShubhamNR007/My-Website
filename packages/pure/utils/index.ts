@@ -2,9 +2,8 @@
 export { default as clsx } from './clsx'
 export { default as mdastToString } from './mdast-util-to-string'
 export { default as getReadingTime } from './reading-time'
-export { default as isAbsoluteUrl } from './is-absolute-url'
 
-// Class merge
+// Tailwind cn
 export { cn } from './class-merge'
 
 // Date

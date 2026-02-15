@@ -1,25 +1,14 @@
 ---
-import type { HTMLTag, Polymorphic } from 'astro/types'
-
 import { cn } from '../../utils'
 
-type Props<Tag extends HTMLTag> = Polymorphic<{ as: Tag }> & {
-  as?: string
-  title?: string
-  href?: string
-  variant?: 'button' | 'pill' | 'back' | 'ahead'
-  target?: string
-  class?: string
-}
-
-const { as: Tag = 'a', class: className, title, href, variant = 'button', ...props } = Astro.props
+const { as: Tag = 'a', class: className, title, href, style = 'button', ...props } = Astro.props
 ---
 
 <Tag
   class={cn(
-    'group inline-flex items-center gap-x-1 rounded-lg bg-muted border px-2 py-1 text-sm text-muted-foreground transition-all hover:bg-card no-underline',
+    'group inline-flex items-center gap-x-1 rounded-lg bg-muted border px-2 py-1 text-sm text-muted-foreground transition-all hover:bg-primary-foreground no-underline',
     !href && 'cursor-default',
-    variant === 'pill' && 'rounded-xl',
+    style === 'pill' && 'rounded-xl',
     className
   )}
   href={href}
@@ -28,7 +17,7 @@ const { as: Tag = 'a', class: className, title, href, variant = 'button', ...pro
 >
   <slot name='before'>
     {
-      variant === 'back' && (
+      style === 'back' && (
         <svg
           xmlns='http://www.w3.org/2000/svg'
           width='16'
@@ -60,7 +49,7 @@ const { as: Tag = 'a', class: className, title, href, variant = 'button', ...pro
   </slot>
   <slot name='after'>
     {
-      variant === 'ahead' && (
+      style === 'ahead' && (
         <svg
           xmlns='http://www.w3.org/2000/svg'
           width='16'
