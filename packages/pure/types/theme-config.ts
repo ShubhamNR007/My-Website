@@ -27,14 +27,6 @@ export const ThemeConfigSchema = () =>
     /** The default favicon for your site which should be a path to an image in the `public/` directory. */
     favicon: FaviconSchema(),
 
-    /** The default social card image for your site which should be a path to an image in the `public/` directory. */
-    socialCard: z
-      .string()
-      .default('/images/social-card.png')
-      .describe(
-        'The default social card image for your site which should be a path to an image in the `public/` directory.'
-      ),
-
     /** Set a logo image to show in the homepage. */
     logo: LogoConfigSchema(),
 
@@ -127,24 +119,14 @@ export const ThemeConfigSchema = () =>
 
     /** Configure the footer of your site. */
     footer: z.object({
-      /** The footer content for your site. */
-      year: z.string().describe('The footer content for your site.'),
-      /** The footer links for your site. */
-      links: z
-        .array(
-          z.object({
-            /** Link title */
-            title: z.string().describe('Link title'),
-            /** Link URL */
-            link: z.string().describe('Link URL'),
-            /** Link style */
-            style: z.string().optional().describe('Link style'),
-            /** Link position */
-            pos: z.number().default(1).describe('Link position')
-          })
-        )
-        .optional()
-        .describe('The footer links for your site.'),
+      /** Registration information for ICP (optional) */
+      registration: z.object({
+        /** Regstration link */
+        url: z.string().optional().describe('Regstration link'),
+
+        /** Registration show text */
+        text: z.string().optional().describe('Registration show text')
+      }),
 
       /** Enable displaying a “Astro & Pure theme powered” link in your site’s footer. */
       credits: z
@@ -170,18 +152,13 @@ export const ThemeConfigSchema = () =>
     }),
 
     content: z.object({
-      externalLinks: z.object({
-        /** Content to show for external links */
-        content: z.string().optional().default(' ↗').describe('Content to show for external links'),
-        /** Properties for the external links element */
-        properties: z
-          .record(z.string())
-          .optional()
-          .describe('Properties for the external links element')
-      }),
+      externalLinksContent: z.string().optional().default(' ↗'),
 
       /** Blog page size for pagination */
       blogPageSize: z.number().optional().default(8),
+
+      /** Show external link arrow */
+      externalLinkArrow: z.boolean().optional().default(true),
 
       /** Share buttons to show */
       share: ShareSchema()

@@ -3,8 +3,8 @@
  * source: https://github.com/withastro/astro/blob/main/packages/astro/src/content/error-map.ts
  */
 
-import { AstroError } from 'astro/errors'
 import type { z } from 'astro:content'
+import { AstroError } from 'astro/errors'
 
 type TypeOrLiteralErrByPathEntry = {
   code: 'invalid_type' | 'invalid_literal'
@@ -45,10 +45,7 @@ export async function parseAsyncWithFriendlyErrors<T extends z.Schema>(
   return processParsedData(await schema.safeParseAsync(input, { errorMap }), message)
 }
 
-function processParsedData<TSchema extends z.Schema>(
-  parsedData: z.SafeParseReturnType<z.output<TSchema>, z.input<TSchema>>,
-  message: string
-): z.output<TSchema> {
+function processParsedData(parsedData: z.SafeParseReturnType<any, any>, message: string) {
   if (!parsedData.success) {
     throw new AstroError(message, parsedData.error.issues.map((i) => i.message).join('\n'))
   }
@@ -63,20 +60,17 @@ const errorMap: z.ZodErrorMap = (baseError, ctx) => {
     // raise a single error when `key` does not match:
     // > Did not match union.
     // > key: Expected `'tutorial' | 'blog'`, received 'foo'
-    const typeOrLiteralErrByPath: Map<string, TypeOrLiteralErrByPathEntry> = new Map()
-    for (const unionError of baseError.unionErrors.flatMap((e) => e.errors)) {
+    let typeOrLiteralErrByPath: Map<string, TypeOrLiteralErrByPathEntry> = new Map()
+    for (const unionError of baseError.unionErrors.map((e) => e.errors).flat()) {
       if (unionError.code === 'invalid_type' || unionError.code === 'invalid_literal') {
         const flattenedErrorPath = flattenErrorPath(unionError.path)
         if (typeOrLiteralErrByPath.has(flattenedErrorPath)) {
-          typeOrLiteralErrByPath
-            .get(flattenedErrorPath)
-            ?.expected.push((unionError as { expected: unknown }).expected)
+          typeOrLiteralErrByPath.get(flattenedErrorPath)!.expected.push(unionError.expected)
         } else {
           typeOrLiteralErrByPath.set(flattenedErrorPath, {
             code: unionError.code,
-            received:
-              'received' in unionError ? (unionError as { received: unknown }).received : undefined,
-            expected: [(unionError as { expected: unknown }).expected]
+            received: (unionError as any).received,
+            expected: [unionError.expected]
           })
         }
       }
@@ -120,8 +114,8 @@ const errorMap: z.ZodErrorMap = (baseError, ctx) => {
         }
       }
       if (expectedShapes.length) {
-        details.push(`> Expected type \`${expectedShapes.join(' | ')}\``)
-        details.push(`> Received \`${stringify(ctx.data)}\``)
+        details.push('> Expected type `' + expectedShapes.join(' | ') + '`')
+        details.push('> Received `' + stringify(ctx.data) + '`')
       }
     }
 
@@ -134,9 +128,8 @@ const errorMap: z.ZodErrorMap = (baseError, ctx) => {
         baseErrorPath,
         getTypeOrLiteralMsg({
           code: baseError.code,
-          received:
-            'received' in baseError ? (baseError as { received: unknown }).received : undefined,
-          expected: [(baseError as { expected: unknown }).expected]
+          received: (baseError as any).received,
+          expected: [baseError.expected]
         })
       )
     }

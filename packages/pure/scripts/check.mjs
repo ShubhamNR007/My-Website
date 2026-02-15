@@ -1,4 +1,4 @@
-import { exec } from 'node:child_process'
+import { exec } from 'child_process'
 
 const runCommand = (command, cwd, timeout = 5000) => {
   return new Promise((resolve, reject) => {

