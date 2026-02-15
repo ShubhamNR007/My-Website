@@ -121,9 +121,3 @@ If you want the full, kitchen-sink writeups or the Python PoCs I used to automat
 - [Official Portswigger Labs](https://portswigger.net/web-security/all-labs#api-testing)
 - [My PortSwigger lab index(Writeups)](https://shubhamranpise.com/portswigger-labs)  
 - [My exploit scripts(Exploits)](https://github.com/ShubhamNR007/portswigger-labs-exploits/tree/main/API)
-
----
-
-— Shubham Ranpise
-
----
