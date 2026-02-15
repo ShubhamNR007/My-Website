@@ -1,22 +1,13 @@
 ---
 import { Image } from 'astro:assets'
 
-import { Quote } from 'astro-pure/advanced'
 import { PostPreview } from 'astro-pure/components/pages'
 import { getBlogCollection, sortMDByDate } from 'astro-pure/server'
 import { Button, Card, Icon, Label } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
-import ProjectCard from '@/components/home/ProjectCard.astro'
 import Section from '@/components/home/Section.astro'
-import SkillLayout from '@/components/home/SkillLayout.astro'
 import avatar from '@/assets/avatar.png'
 import config from '@/site-config'
-
-const languages = ['Python', 'Bash', 'C', 'SQL']
-const security_tools = ['Burp Suite', 'Nmap', 'Metasploit', 'Wireshark', 'Kali Linux', 'OWASP ZAP', 'Nessus', 'Netcat', 'Hydra', 'Gobuster']
-const penetration_testing = ['VAPT', 'Network Penetration Testing', 'Web Application Penetration Testing', 'API Penetration Testing', 'Active Directory Attacks', 'Privilege Escalation', 'Exploitation', 'Pivoting & Tunneling']
-const certifications = ['OSCP', 'eJPT']
-const frameworks = ['OWASP Top 10']
 
 const MAX_POSTS = 10
 const allPosts = await getBlogCollection()
@@ -43,7 +34,7 @@ const allPostsByDate = sortMDByDate(allPosts).slice(0, MAX_POSTS)
 
       {/* Get template */}
       <a
-        href='/resume/resume.pdf'
+        href='/about#social-networks'
         target='_blank'
         class='flex flex-row items-center gap-x-3 rounded-full border bg-background px-4 py-2 text-sm shadow-sm transition-shadow hover:shadow-md'
       >
@@ -53,17 +44,16 @@ const allPostsByDate = sortMDByDate(allPosts).slice(0, MAX_POSTS)
           ></span>
           <span class='size-2 rounded-full bg-green-400'></span>
         </span>
-        <p class='font-medium text-muted-foreground'>Hire Me</p>
+        <p class='font-medium text-muted-foreground'>Contact & Profiles</p>
       </a>
     </section>
     </section>
 
     <div id='content' class='animate flex flex-col gap-y-10 md:w-4/5 lg:w-5/6'>
       <Section title='About'>
-        <p class='text-muted-foreground'>Cyber Security Researcher | Penetration Tester</p>
+        <p class='text-muted-foreground'>Penetration Tester</p>
         <p class='text-muted-foreground'>
-          I specialize in Web, API, and Active Directory Pentesting with a focus on practical offensive security.
-        I'm currently working as a Cyber Defense & IR Analyst at KPMG India, where I handle AppSec, Firewall Access Review, and developer training initiatives.  
+         I specialize in Web, API, and Active Directory penetration testing, focusing on practical offensive security and real-world exploitation techniques. I am currently an Associate Security Analyst at Roche, where I perform application security assessments to identify vulnerabilities and help secure critical systems.
         </p>
         <Button title='More about me' class='w-fit self-end' href='/about' style='ahead' />
       </Section>
