@@ -1,15 +1,17 @@
 import type { CardListData, Config, IntegrationUserConfig, ThemeUserConfig } from 'astro-pure/types'
 
 export const theme: ThemeUserConfig = {
-  // === Basic configuration ===
+  // [Basic]
   /** Title for your website. Will be used in metadata and as browser tab title. */
   title: 'Shubham Ranpise',
   /** Will be used in index page & copyright declaration */
   author: 'Shubham Ranpise',
   /** Description metadata for your website. Can be used in page metadata. */
-  description: 'Stay hungry, stay foolish',
+  description: 'Think like an attacker. Build like a defender.',
   /** The default favicon for your site which should be a path to an image in the `public/` directory. */
   favicon: '/favicon/favicon.ico',
+  /** The default social card image for your site which should be a path to an image in the `public/` directory. */
+  socialCard: '/images/social-card.png',
   /** Specify the default language for this site. */
   locale: {
     lang: 'en-US',
@@ -24,16 +26,15 @@ export const theme: ThemeUserConfig = {
   },
   /** Set a logo image to show in the homepage. */
   logo: {
-    src: 'src/assets/avatar.png',
+    src: '/src/assets/avatar.png',
     alt: 'Avatar'
   },
 
-  // === Global configuration ===
   titleDelimiter: '•',
-  prerender: true,
+  prerender: true, // pagefind search is not supported with prerendering disabled
   npmCDN: 'https://cdn.jsdelivr.net/npm',
 
-  // still in test
+  // Still in test
   head: [
     /* Telegram channel */
     // {
@@ -48,63 +49,91 @@ export const theme: ThemeUserConfig = {
   header: {
     menu: [
       { title: 'Blog', link: '/blog' },
-      { title: 'Portswigger-Labs', link: '/portswigger-labs' },
+      { title: 'Home-Lab', link: '/lab' },
       { title: 'About', link: '/about' }
     ]
   },
 
   /** Configure the footer of your site. */
   footer: {
-    /** Remove Astro Pure credits and other footer information */
-    credits: false,  // Removed the 'Astro & Pure theme powered' link
-    /** Remove social link */
-    social: {},  // No social links, including GitHub
-
-    // Remove registration information for ICP
-    registration: {}
+    // Year format
+    year: `© ${new Date().getFullYear()}`,
+    // year: `© 2019 - ${new Date().getFullYear()}`,
+    links: [
+    ],
+    /** Optional details about the social media accounts for this site. */
+    social: { github: 'https://github.com/ShubhamNR007' }
   },
 
+  // [Content]
   content: {
-    externalLinksContent: ' ↗',
+    /** External links configuration */
+    externalLinks: {
+      content: ' ↗',
+      /** Properties for the external links element */
+      properties: {
+        style: 'user-select:none'
+      }
+    },
     /** Blog page size for pagination (optional) */
     blogPageSize: 8,
-    externalLinkArrow: true, // show external link arrow
     // Currently support weibo, x, bluesky
-    share: ['weibo', 'x', 'bluesky']
+    share: []
   }
 }
 
 export const integ: IntegrationUserConfig = {
-  // Links menagement
-  // See: https://astro-pure.js.org/docs/integrations/links
+  // [Links]
+  // https://astro-pure.js.org/docs/integrations/links
   links: {
     // Friend logbook
     logbook: [
-      { date: '2024-07-01', content: 'Lorem ipsum dolor sit amet.' },
-      { date: '2024-07-01', content: 'vidit suscipit at mei.' },
-      { date: '2024-07-01', content: 'Quem denique mea id.' }
+      { date: '2025-03-16', content: 'Is there a leakage?' },
+      { date: '2025-03-16', content: 'A leakage of what?' },
+      { date: '2025-03-16', content: 'I have a full seat of water, like, full of water!' },
+      { date: '2025-03-16', content: 'Must be the water.' },
+      { date: '2025-03-16', content: "Let's add that to the words of wisdom." }
     ],
     // Yourself link info
     applyTip: [
       { name: 'Name', val: theme.title },
       { name: 'Desc', val: theme.description || 'Null' },
-      { name: 'Link', val: 'https://astro-pure.js.org/' },
-      { name: 'Avatar', val: 'https://astro-pure.js.org/favicon/favicon.ico' }
-    ]
+      { name: 'Link', val: 'https://shubhamranpise.com/' },
+      { name: 'Avatar', val: 'https://shubhamranpise.com//favicon/favicon.ico' }
+    ],
+    // Cache avatars in `public/avatars/` to improve user experience.
+    cacheAvatar: false
   },
-  // Enable page search function
+  // [Search]
   pagefind: true,
   // Add a random quote to the footer (default on homepage footer)
   // See: https://astro-pure.js.org/docs/integrations/advanced#web-content-render
+  // [Quote]
   quote: {
-    server: 'https://api.quotable.io/quotes/random?maxLength=60',
-    target: `(data) => data[0].content || 'Error'`
+    // - Hitokoto
+    // https://developer.hitokoto.cn/sentence/#%E8%AF%B7%E6%B1%82%E5%9C%B0%E5%9D%80
+    // server: 'https://v1.hitokoto.cn/?c=i',
+    // target: `(data) => (data.hitokoto || 'Error')`
+    // - Quoteable
+    // https://github.com/lukePeavey/quotable
+    // server: 'http://api.quotable.io/quotes/random?maxLength=60',
+    // target: `(data) => data[0].content || 'Error'`
+    // - DummyJSON
+    server: 'https://dummyjson.com/quotes/random',
+    target: `(data) => (data.quote.length > 80 ? \`\${data.quote.slice(0, 80)}...\` : data.quote || 'Error')`
   },
-  // Tailwindcss typography
+  // [Typography]
+  // https://unocss.dev/presets/typography
   typography: {
-    class: 'prose text-base text-muted-foreground'
+    class: 'prose text-base',
+    // The style of blockquote font `normal` / `italic` (default to italic in typography)
+    blockquoteStyle: 'italic',
+    // The style of inline code block `code` / `modern` (default to code in typography)
+    inlineCodeBlockStyle: 'modern'
   },
+  // [Lightbox]
   // A lightbox library that can add zoom effect
+  // https://astro-pure.js.org/docs/integrations/others#medium-zoom
   mediumZoom: {
     enable: true, // disable it will not load the whole library
     selector: '.prose .zoomable',
@@ -115,11 +144,17 @@ export const integ: IntegrationUserConfig = {
   // Comment system
   waline: {
     enable: false,
+    // Server service link
     server: 'https://astro-theme-pure-waline.arthals.ink/',
-    emoji: ['bmoji', 'weibo'],
+    // Show meta info for comments
+    showMeta: false,
+    // Refer https://waline.js.org/en/guide/features/emoji.html
+    emoji: ['bmoji'],
+    // Refer https://waline.js.org/en/reference/client/props.html
     additionalConfigs: {
+      // search: false,
       pageview: true,
-      comment: true,
+      comment: false,
       locale: {
         reaction0: 'Like',
         placeholder: 'Welcome to comment. (Email to receive replies. Login is unnecessary)'
@@ -129,6 +164,8 @@ export const integ: IntegrationUserConfig = {
   }
 }
 
+
+/** 
 export const terms: CardListData = {
   title: 'Terms content',
   list: [
@@ -150,6 +187,7 @@ export const terms: CardListData = {
     }
   ]
 }
+*/
 
 const config = { ...theme, integ } as Config
 export default config
