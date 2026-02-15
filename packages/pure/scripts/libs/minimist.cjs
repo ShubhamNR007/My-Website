@@ -2,7 +2,7 @@
 
 function hasKey(obj, keys) {
   var o = obj
-  keys.slice(0, -1).forEach((key) => {
+  keys.slice(0, -1).forEach(function (key) {
     o = o[key] || {}
   })
 
@@ -24,7 +24,7 @@ function isConstructorOrProto(obj, key) {
   return (key === 'constructor' && typeof obj[key] === 'function') || key === '__proto__'
 }
 
-module.exports = (args, opts) => {
+module.exports = function (args, opts) {
   if (!opts) {
     opts = {}
   }
@@ -45,7 +45,7 @@ module.exports = (args, opts) => {
     ;[]
       .concat(opts.boolean)
       .filter(Boolean)
-      .forEach((key) => {
+      .forEach(function (key) {
         flags.bools[key] = true
       })
   }
@@ -53,23 +53,29 @@ module.exports = (args, opts) => {
   var aliases = {}
 
   function aliasIsBoolean(key) {
-    return aliases[key].some((x) => flags.bools[x])
+    return aliases[key].some(function (x) {
+      return flags.bools[x]
+    })
   }
 
-  Object.keys(opts.alias || {}).forEach((key) => {
+  Object.keys(opts.alias || {}).forEach(function (key) {
     aliases[key] = [].concat(opts.alias[key])
-    aliases[key].forEach((x) => {
-      aliases[x] = [key].concat(aliases[key].filter((y) => x !== y))
+    aliases[key].forEach(function (x) {
+      aliases[x] = [key].concat(
+        aliases[key].filter(function (y) {
+          return x !== y
+        })
+      )
     })
   })
 
   ;[]
     .concat(opts.string)
     .filter(Boolean)
-    .forEach((key) => {
+    .forEach(function (key) {
       flags.strings[key] = true
       if (aliases[key]) {
-        ;[].concat(aliases[key]).forEach((k) => {
+        ;[].concat(aliases[key]).forEach(function (k) {
           flags.strings[k] = true
         })
       }
@@ -89,11 +95,9 @@ module.exports = (args, opts) => {
   }
 
   function setKey(obj, keys, value) {
-    var o = obj,
-      i,
-      key
-    for (i = 0; i < keys.length - 1; i++) {
-      key = keys[i]
+    var o = obj
+    for (var i = 0; i < keys.length - 1; i++) {
+      var key = keys[i]
       if (isConstructorOrProto(o, key)) {
         return
       }
@@ -140,16 +144,14 @@ module.exports = (args, opts) => {
     }
 
     var value = !flags.strings[key] && isNumber(val) ? Number(val) : val
-    setKey(
-      argv,
-      key.split('.'),
-      value
-    )(aliases[key] || []).forEach((x) => {
+    setKey(argv, key.split('.'), value)
+
+    ;(aliases[key] || []).forEach(function (x) {
       setKey(argv, x.split('.'), value)
     })
   }
 
-  Object.keys(flags.bools).forEach((key) => {
+  Object.keys(flags.bools).forEach(function (key) {
     setArg(key, defaults[key] === undefined ? false : defaults[key])
   })
 
@@ -160,19 +162,18 @@ module.exports = (args, opts) => {
     args = args.slice(0, args.indexOf('--'))
   }
 
-  var i, arg, key, next, m, value, letters, broken, j
-  for (i = 0; i < args.length; i++) {
-    arg = args[i]
-    key
-    next
+  for (var i = 0; i < args.length; i++) {
+    var arg = args[i]
+    var key
+    var next
 
     if (/^--.+=/.test(arg)) {
       // Using [\s\S] instead of . because js doesn't support the
       // 'dotall' regex modifier. See:
       // http://stackoverflow.com/a/1068308/13216
-      m = arg.match(/^--([^=]+)=([\s\S]*)$/)
+      var m = arg.match(/^--([^=]+)=([\s\S]*)$/)
       key = m[1]
-      value = m[2]
+      var value = m[2]
       if (flags.bools[key]) {
         value = value !== 'false'
       }
@@ -199,10 +200,10 @@ module.exports = (args, opts) => {
         setArg(key, flags.strings[key] ? '' : true, arg)
       }
     } else if (/^-[^-]+/.test(arg)) {
-      letters = arg.slice(1, -1).split('')
+      var letters = arg.slice(1, -1).split('')
 
-      broken = false
-      for (j = 0; j < letters.length; j++) {
+      var broken = false
+      for (var j = 0; j < letters.length; j++) {
         next = arg.slice(j + 2)
 
         if (next === '-') {
@@ -259,11 +260,11 @@ module.exports = (args, opts) => {
     }
   }
 
-  Object.keys(defaults).forEach((k) => {
+  Object.keys(defaults).forEach(function (k) {
     if (!hasKey(argv, k.split('.'))) {
       setKey(argv, k.split('.'), defaults[k])
 
-      ;(aliases[k] || []).forEach((x) => {
+      ;(aliases[k] || []).forEach(function (x) {
         setKey(argv, x.split('.'), defaults[k])
       })
     }
@@ -272,7 +273,7 @@ module.exports = (args, opts) => {
   if (opts['--']) {
     argv['--'] = notFlags.slice()
   } else {
-    notFlags.forEach((k) => {
+    notFlags.forEach(function (k) {
       argv._.push(k)
     })
   }

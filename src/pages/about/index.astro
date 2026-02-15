@@ -1,86 +1,75 @@
 ---
-import { Button, Timeline } from 'astro-pure/user'
+import { Button, Collapse, Spoiler, Timeline } from 'astro-pure/user'
 import PageLayout from '@/layouts/CommonPage.astro'
 import ToolSection from '@/components/about/ToolSection.astro'
 
-// 🔥 Optimized icon imports (Astro Assets)
-import oscpIcon from '/src/assets/icons/oscp.png'
-import ejptIcon from '/src/assets/icons/ejpt.png'
-import htbIcon from '/src/assets/icons/htb.png'
-import thmIcon from '/src/assets/icons/thm.png'
-import githubIcon from '/src/assets/icons/github.png'
-import linkedinIcon from '/src/assets/icons/linkedin.png'
-import xIcon from '/src/assets/icons/x.jpg'
-import gmailIcon from '/src/assets/icons/gmail.png'
-
-// ✅ Unique heading slugs (important for TOC)
 const headings = [
-  { depth: 2, slug: 'my-journey', text: 'My Journey' },
-  { depth: 2, slug: 'certifications', text: 'Certifications' },
-  { depth: 2, slug: 'ctf-profiles', text: 'CTF Profiles' },
+  { depth: 2, slug: 'about-blog', text: 'My Journey' },
+  { depth: 2, slug: 'tools', text: 'Certifications' },
+  { depth: 2, slug: 'tools', text: 'CTF Profiles' },
   { depth: 2, slug: 'social-networks', text: 'Social Networks' }
 ]
 ---
 
 <PageLayout title='About' {headings}>
-  <p>Penetration Tester</p>
-
+  <p>Cyber Security Researcher | Penetration Tester</p>
   <p>
-    I specialize in Web, API, and Active Directory penetration testing, focusing on practical offensive security and real-world exploitation techniques. I am currently an Associate Security Analyst at Roche, where I perform application security assessments to identify vulnerabilities and help secure critical systems.
+       I specialize in Web, API, and Active Directory Pentesting with a focus on practical offensive security.
+        I'm currently working as a Cyber Defense & IR Analyst at KPMG India, where I handle AppSec, Firewall Access Review, and developer training initiatives.  
   </p>
+<!--  <p>My motto: Stay hungry, Stay foolish. <Spoiler>这里可以夹私货</Spoiler></p> -->
+  <Button title='Hire Me' class='w-fit' href='/resume/resume.pdf' style='ahead' target='_blank' />
 
-  <Button
-    title='Hire Me'
-    class='w-fit'
-    href='/resume/resume.pdf'
-    style='ahead'
-    target='_blank'
-  />
+<!--
+  {/* general-talk */}
+  <h2 id='hobbies'>Hobbies</h2>
+  <ul>
+    <li>Lorem ipsum dolor sit amet, vidit suscipit at mei.</li>
+    <li>
+      Quem denique mea id. Usu ei regione indoctum dissentiunt, cu meliore fuisset mei, vel quod
+      voluptua ne.
+    </li>
+    <li>Ex dicat impedit mel, at eum oratio possit voluptatum.</li>
+    <li>Impetus fuisset ullamcorper pri cu, his posse iisque ad, aliquam honestatis usu id.</li>
+  </ul>
+-->
 
-  {/* ================= My Journey ================= */}
-  <h2 id='my-journey'>My Journey</h2>
-
+  {/* about-blog */}
+  <h2 id='about-blog'>My Journey</h2>
   <p>Work Experience:</p>
-
   <Timeline
     events={[
       {
-        date: 'Feb 2026 – Present',
-        content:
-          'Joined <a href="https://www.roche.com/" target="_blank">Roche</a> as a Associate Security Analyst'
-      },
-      {
-        date: 'Sep 2024 – Jan 2026',
+        date: 'Sep 2024-Present :',
         content:
           'Joined <a href="https://kpmg.com/in/en.html" target="_blank">KPMG India</a> as a DT-Cyber Defense & IR Analyst'
       },
       {
-        date: 'Jun 2024 – Sep 2024',
+        date: 'Jun 2024-Sep 2024 :',
         content:
-          'Joined <a href="https://securelayer7.net/home" target="_blank">Securelayer7</a> as a Security Consultant Intern'
+          'Joined <a href="https://securelayer7.net/home"target="_blank">Securelayer7</a> as a Security Consultant Intern.'
       }
     ]}
   />
-
   <p>Formal Education:</p>
-
   <Timeline
     events={[
       {
-        date: '2021 – 2024',
+        date: '2021-2024 :',
         content:
-          'Bachelor of Business Administration – Computer Application (BBA-CA)'
+          'Bachelor of Business Administration - Computer Application [BBA-CA]'
       },
       {
-        date: '2019 – 2020',
-        content: '12th Science (HSC)'
+        date: '2019-2020 :',
+        content:
+          '12th Science HSC'
       }
     ]}
   />
 
-  {/* ================= Certifications ================= */}
-  <h2 id='certifications'>Certifications</h2>
-
+  {/* tools */}
+  <h2 id='tools'>Certifications</h2>
+  <p></p>
   <ToolSection
     class='mb-5'
     title='Cyber Security'
@@ -89,43 +78,44 @@ const headings = [
         name: 'OSCP',
         description: 'Offensive Security Certified Professional',
         href: 'https://www.credential.net/54590d97-6f4e-414c-b400-909b275d175d#acc.ZwonVMlD',
-        icon: oscpIcon
+        icon: '/icons/oscp.png'
       },
       {
         name: 'eJPT',
         description: 'Junior Penetration Tester',
         href: 'https://www.credential.net/d4950739-0625-4c70-9a5c-1174eb5eb119#acc.XuMZflCt',
-        icon: ejptIcon
+        icon: '/icons/ejpt.png'
       }
     ]}
   />
 
-  {/* ================= CTF Profiles ================= */}
-  <h2 id='ctf-profiles'>CTF Profiles</h2>
-
+    {/* tools */}
+  <h2 id='tools'>CTF Profiles</h2>
+  <p></p>
   <ToolSection
     class='mb-5'
-    title='Capture The Flag'
+    title='Capture the flag'
     tools={[
       {
-        name: 'Hack The Box',
-        description: 'HTB Profile',
+        name: 'HTB',
+        description: 'Hack The Box',
         href: 'https://app.hackthebox.com/profile/876604',
-        icon: htbIcon
+        icon: '/icons/htb.png'
       },
       {
-        name: 'TryHackMe',
-        description: 'THM Profile',
+        name: 'THM',
+        description: 'Try Hack Me',
         href: 'https://tryhackme.com/p/shubham361',
-        icon: thmIcon
+        icon: '/icons/thm.png'
       }
     ]}
   />
 
-  {/* ================= Social Networks ================= */}
+  {/* social-networks */}
   <h2 id='social-networks'>Social Networks</h2>
-
-  <ToolSection
+  <p>
+  </p>
+    <ToolSection
     class='mb-5'
     title='Drop me a line to chat AppSec!'
     tools={[
@@ -133,25 +123,25 @@ const headings = [
         name: 'GitHub',
         description: 'ShubhamNR007',
         href: 'https://github.com/ShubhamNR007',
-        icon: githubIcon
+        icon: '/icons/github.png'
       },
       {
-        name: 'LinkedIn',
+        name: 'Linkedin',
         description: 'shubham-ranpise',
         href: 'https://www.linkedin.com/in/shubham-ranpise/',
-        icon: linkedinIcon
+        icon: '/icons/linkedin.png'
       },
       {
-        name: 'X (Twitter)',
+        name: 'X',
         description: 'shubhamrnps',
         href: 'https://x.com/shubhamrnps',
-        icon: xIcon
+        icon: '/icons/x.jpg'
       },
       {
-        name: 'Email',
+        name: 'Mail',
         description: 'shubhamrnps@gmail.com',
         href: 'mailto:shubhamrnps@gmail.com',
-        icon: gmailIcon
+        icon: '/icons/gmail.png'
       }
     ]}
   />

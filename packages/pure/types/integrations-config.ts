@@ -24,16 +24,12 @@ export const IntegrationConfigSchema = () =>
       target: z.string()
     }),
 
-    /** UnoCSS typography */
+    /** Tailwindcss typography */
     typography: z.object({
       /** The class to apply to the typography. */
       class: z
         .string()
-        .default('prose prose-pure dark:prose-invert dark:prose-pure prose-headings:font-medium'),
-      /** The style of blockquote font, normal or italic. */
-      blockquoteStyle: z.enum(['normal', 'italic']).default('italic'),
-      /** The style of inline code block, code or modern. */
-      inlineCodeBlockStyle: z.enum(['code', 'modern']).default('modern')
+        .default('prose prose-pure dark:prose-invert dark:prose-pure prose-headings:font-medium')
     }),
 
     /** A lightbox library that can add zoom effect */
@@ -52,8 +48,6 @@ export const IntegrationConfigSchema = () =>
       enable: z.boolean().default(false),
       /** The server to use for the Waline comment system. */
       server: z.string().optional(),
-      /** Show meta info for comments */
-      showMeta: z.boolean().default(true),
       /** The emoji to use for the Waline comment system. */
       emoji: z.array(z.string()).optional(),
       /** Additional configurations for the Waline comment system. */

