@@ -10,6 +10,7 @@ interface Props {
     description: string
     href: string
 <<<<<<< HEAD
+<<<<<<< HEAD
     icon:
       | string
       | Promise<typeof import('*.svg?raw')>
@@ -21,10 +22,14 @@ interface Props {
 =======
     icon: string // changed from Promise<typeof import('*.svg?raw')>
 >>>>>>> parent of 4f1034b (test?)
+=======
+    icon: string // changed from Promise<typeof import('*.svg?raw')>
+>>>>>>> parent of 4f1034b (test?)
   }[]
 }
 
 const { class: className, title, tools, ...props } = Astro.props
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 function isImageMetadata(obj: unknown): obj is ImageMetadata {
@@ -34,6 +39,8 @@ function isImageMetadata(obj: unknown): obj is ImageMetadata {
 function isString(obj: unknown): obj is string {
   return typeof obj === 'string'
 }
+=======
+>>>>>>> parent of 4f1034b (test?)
 =======
 >>>>>>> parent of 4f1034b (test?)
 ---
@@ -57,6 +64,7 @@ function isString(obj: unknown): obj is string {
           target='_blank'
         >
           <div class='flex items-center gap-x-3 rounded-lg border border-transparent px-1.5 py-1 transition-colors hover:border-border hover:bg-muted'>
+<<<<<<< HEAD
 <<<<<<< HEAD
 
             {/* ========== ICON RENDERING LOGIC ========== */}
@@ -136,11 +144,16 @@ function isString(obj: unknown): obj is string {
             {/* ========== TEXT ========== */}
 
 =======
+=======
+>>>>>>> parent of 4f1034b (test?)
             <img
               src={tool.icon}
               alt={tool.name}
               class='size-10 rounded-lg bg-primary-foreground p-2 object-contain'
               />
+<<<<<<< HEAD
+>>>>>>> parent of 4f1034b (test?)
+=======
 >>>>>>> parent of 4f1034b (test?)
             <div class='z-20 flex flex-col'>
               <div class='font-medium text-foreground'>{tool.name}</div>
