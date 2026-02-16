@@ -3,45 +3,43 @@ import { Image } from 'astro:assets'
 import { Quote } from 'astro-pure/advanced'
 import { PostPreview } from 'astro-pure/components/pages'
 import { getBlogCollection, sortMDByDate } from 'astro-pure/server'
-import { Button } from 'astro-pure/user'
+import { Button, Card, Icon, Label } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
+import ProjectCard from '@/components/home/ProjectCard.astro'
 import Section from '@/components/home/Section.astro'
+import SkillLayout from '@/components/home/SkillLayout.astro'
 import config from '@/site-config'
 
+const languages = ['Html', 'JavaScript', 'CSS', 'Shell']
+const frontend = ['TypeScript', 'Vite', 'Webpack', 'Astro']
+const backend = ['Vercel', 'Waline']
 const MAX_POSTS = 10
 const allPosts = await getBlogCollection()
 const allPostsByDate = sortMDByDate(allPosts).slice(0, MAX_POSTS)
 
-// Glob with eager: true → values are already resolved ImageMetadata objects
+// ── Your avatar (same safe pattern as original theme) ──
+const imagePath = '/src/assets/avatar.png'   // ← change only this line
+
 const images = import.meta.glob<{ default: ImageMetadata }>(
-  '/src/assets/*.{jpeg,jpg,png,gif,avif,webp}',
-  { eager: true }
+  '/src/assets/*.{jpeg,jpg,png,gif,avif,webp}'
 )
-
-const avatarPath = '/src/assets/avatar.png'   // exact path from root
-
-if (!images[avatarPath]) {
+if (!images[imagePath])
   throw new Error(
-    `Avatar image not found: "${avatarPath}"\n` +
-    `Available images: ${Object.keys(images).join(', ')}`
+    `"${imagePath}" does not exist in glob: "src/assets/*.{jpeg,jpg,png,gif,avif,webp}"`
   )
-}
-
-const avatarImage = images[avatarPath].default   // .default is the ImageMetadata
 ---
 
 <PageLayout meta={{ title: 'Home' }} highlightColor='#659EB9'>
   <main class='flex w-full flex-col items-center'>
 
+    <!-- Your full-height hero section -->
     <section
       class='animate flex flex-col items-center gap-y-7 min-h-screen justify-center -mt-14'
       id='content-header'
     >
       <Image
-        src={avatarImage}
-        alt='Profile picture'
-        width={208}         
-        height={208}
+        src={images[imagePath]()}
+        alt='Profile'
         class='h-52 w-auto rounded-full border p-1'
         loading='eager'
         fetchpriority='high'
@@ -51,12 +49,15 @@ const avatarImage = images[avatarPath].default   // .default is the ImageMetadat
         <h1 class='text-3xl font-bold'>{config.author}</h1>
       </div>
 
+      <!-- Your contact button -->
       <a
         href='/about#social-networks'
         class='flex flex-row items-center gap-x-3 rounded-full border bg-background px-4 py-2 text-sm shadow-sm transition-shadow hover:shadow-md'
       >
         <span class='relative flex items-center justify-center'>
-          <span class='absolute size-2 animate-ping rounded-full border border-green-400 bg-green-400 opacity-75'></span>
+          <span
+            class='absolute size-2 animate-ping rounded-full border border-green-400 bg-green-400 opacity-75'
+          ></span>
           <span class='size-2 rounded-full bg-green-400'></span>
         </span>
         <p class='font-medium text-muted-foreground'>Contact & Profiles</p>
