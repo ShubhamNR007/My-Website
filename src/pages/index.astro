@@ -3,43 +3,29 @@ import { Image } from 'astro:assets'
 import { Quote } from 'astro-pure/advanced'
 import { PostPreview } from 'astro-pure/components/pages'
 import { getBlogCollection, sortMDByDate } from 'astro-pure/server'
-import { Button, Card, Icon, Label } from 'astro-pure/user'
+import { Button } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
-import ProjectCard from '@/components/home/ProjectCard.astro'
 import Section from '@/components/home/Section.astro'
-import SkillLayout from '@/components/home/SkillLayout.astro'
 import config from '@/site-config'
 
-const languages = ['Html', 'JavaScript', 'CSS', 'Shell']
-const frontend = ['TypeScript', 'Vite', 'Webpack', 'Astro']
-const backend = ['Vercel', 'Waline']
 const MAX_POSTS = 10
 const allPosts = await getBlogCollection()
 const allPostsByDate = sortMDByDate(allPosts).slice(0, MAX_POSTS)
-
-// ── Your avatar (same safe pattern as original theme) ──
-const imagePath = '/src/assets/avatar.png'   // ← change only this line
-
-const images = import.meta.glob<{ default: ImageMetadata }>(
-  '/src/assets/*.{jpeg,jpg,png,gif,avif,webp}'
-)
-if (!images[imagePath])
-  throw new Error(
-    `"${imagePath}" does not exist in glob: "src/assets/*.{jpeg,jpg,png,gif,avif,webp}"`
-  )
 ---
 
 <PageLayout meta={{ title: 'Home' }} highlightColor='#659EB9'>
   <main class='flex w-full flex-col items-center'>
 
-    <!-- Your full-height hero section -->
+    <!-- Your full-height hero -->
     <section
       class='animate flex flex-col items-center gap-y-7 min-h-screen justify-center -mt-14'
       id='content-header'
     >
       <Image
-        src={images[imagePath]()}
-        alt='Profile'
+        src="/avatar.png"           
+        alt="Profile"
+        width={208}
+        height={208}
         class='h-52 w-auto rounded-full border p-1'
         loading='eager'
         fetchpriority='high'
