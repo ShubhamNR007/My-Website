@@ -11,19 +11,28 @@ draft: false
 
 ---
 
-This guide walks through creating a clean baseline system for a headless Raspberry Pi running Ubuntu Server 24.04 LTS.
+This article marks the starting point of my homelab journey. If you are new to self-hosting or Raspberry Pi projects, think of this as preparing the “base system” on which everything else will run.
 
-The goal is not to deploy services yet, but to prepare a stable and secure foundation that future projects can build on — containers, VPNs, monitoring tools, self-hosted apps, or experiments.
+Before installing applications, containers, VPNs, dashboards, or security tools, it is important to first build a reliable foundation. A poorly configured system can lead to instability, security issues, or constant maintenance later. This guide focuses on getting the core system right from the beginning so that future projects can be added safely and predictably.
 
-In my case:
+The setup uses a Raspberry Pi running Ubuntu Server 24.04 LTS in a headless configuration, meaning the device runs without a monitor, keyboard, or mouse and is managed entirely over the network. This approach is typical for home servers because it reduces power usage, clutter, and attack surface while allowing the device to run continuously in the background.
 
-- Fresh OS install
-- Headless setup (no monitor or keyboard)
-- Primary user with sudo privileges
-- Secure SSH access using keys only
-- Firewall, automatic updates, and basic maintenance configured
+By the end of this guide, the Raspberry Pi will function as a clean baseline server with essential protections and automation in place. It will not host any services yet — instead, it will be ready for them.
 
-Your values (hostname, username, network settings) can be different.
+This baseline includes:
+
+- A fresh operating system installation
+- Remote administration using secure SSH key authentication
+- Disabled root login and hardened access settings
+- A firewall restricting unsolicited inbound traffic
+- Automatic installation of security updates
+- Scheduled system maintenance
+- Log size limits to prevent storage exhaustion
+- A stable environment suitable for long-term uptime
+
+In my setup, I use a dedicated administrative user with sudo privileges and a hostname of `pi-lab`, but you can choose names and settings that match your own environment.
+
+Once this foundation is complete, future articles in this series will build on it by adding networking tools, container platforms, monitoring systems, VPN access, and other self-hosted services.
 
 ---
 
@@ -204,7 +213,7 @@ sudo apt install unattended-upgrades
 sudo dpkg-reconfigure --priority=low unattended-upgrades
 ```
 
-Choose **Yes** when prompted.
+Choose `Yes` when prompted.
 
 Security patches will now install automatically in the background.
 
@@ -251,15 +260,13 @@ All unsolicited inbound connections are blocked by default.
 
 ### Allow SSH Only From Trusted Devices
 
-Replace the addresses below with your own trusted machines:
+By default, the firewall blocks all incoming connections. We now explicitly allow SSH access, but only from devices that you trust, such as your laptop or another management machine on your network.
+
+Replace the IP address below with the address of your own device:
 
 ```bash
-sudo ufw allow from 192.168.1.72 to any port 22 proto tcp
-sudo ufw allow from 192.168.1.71 to any port 22 proto tcp
-sudo ufw allow from 100.109.113.127 to any port 22 proto tcp
+sudo ufw allow from 192.168.1.10 to any port 22 proto tcp
 ```
-
-Restricting SSH access significantly reduces the attack surface.
 
 ---
 
@@ -274,7 +281,9 @@ sudo ufw status verbose
 
 ## Part 5 — Harden SSH
 
-Edit the SSH server configuration:
+SSH (Secure Shell) is the main way to manage the Raspberry Pi remotely, so it should be secured early.
+
+Edit the SSH server configuration file:
 
 ```bash
 sudo nano /etc/ssh/sshd_config
@@ -288,13 +297,15 @@ PermitRootLogin no
 PubkeyAuthentication yes
 ```
 
-Restart SSH:
+These settings disable password-based logins and prevent direct root access, allowing only SSH key authentication.
+
+Restart the SSH service to apply the changes:
 
 ```bash
 sudo systemctl restart ssh
 ```
 
-Password-based logins are now disabled, preventing automated brute-force attempts.
+After this step, only devices with the correct private key can log in, which helps protect the server from automated brute-force attacks.
 
 ---
 
