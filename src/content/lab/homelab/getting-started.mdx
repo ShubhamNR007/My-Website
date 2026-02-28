@@ -30,7 +30,7 @@ This baseline includes:
 - Log size limits to prevent storage exhaustion
 - A stable environment suitable for long-term uptime
 
-In my setup, I use a dedicated administrative user with sudo privileges and a hostname of `pi-lab`, but you can choose names and settings that match your own environment.
+In my setup, I use a dedicated `shub` user with sudo privileges and a hostname of `pi-lab`, but you can choose names and settings that match your own environment.
 
 Once this foundation is complete, future articles in this series will build on it by adding networking tools, container platforms, monitoring systems, VPN access, and other self-hosted services.
 
@@ -50,9 +50,9 @@ Starting with a clean card avoids boot problems caused by leftover partitions or
 
 ### Write Ubuntu Server Using Raspberry Pi Imager
 
-Download and launch the official Raspberry Pi Imager from the Raspberry [Pi website](https://www.raspberrypi.com/software/) and choose:
+Download and launch the official Raspberry Pi Imager from the Raspberry Pi [website](https://www.raspberrypi.com/software/) and choose:
 
-Operating System: *Ubuntu Server 24.04 LTS (64-bit)*
+Operating System: `Ubuntu Server 24.04 LTS (64-bit)`
 
 Ubuntu Server is lightweight, stable, and well suited for long-running services without a graphical interface.
 
@@ -72,7 +72,7 @@ Choose the correct storage device. Everything on it will be erased.
 
 ### Set Hostname
 
-I used:
+I used below hostname for my machine:
 
 ```
 pi-lab
@@ -215,7 +215,7 @@ sudo dpkg-reconfigure --priority=low unattended-upgrades
 
 Choose `Yes` when prompted.
 
-Security patches will now install automatically in the background.
+Security patches will now install automatically in the background when available.
 
 ---
 
@@ -254,7 +254,7 @@ sudo ufw default deny incoming
 sudo ufw default allow outgoing
 ```
 
-All unsolicited inbound connections are blocked by default.
+All unsolicited inbound connections are blocked by default and outbound are allowed.
 
 ---
 
@@ -262,7 +262,7 @@ All unsolicited inbound connections are blocked by default.
 
 By default, the firewall blocks all incoming connections. We now explicitly allow SSH access, but only from devices that you trust, such as your laptop or another management machine on your network.
 
-Replace the IP address below with the address of your own device:
+Replace the IP address below with the address of your own device (Lan or VPN):
 
 ```bash
 sudo ufw allow from 192.168.1.10 to any port 22 proto tcp
@@ -281,7 +281,7 @@ sudo ufw status verbose
 
 ## Part 5 — Harden SSH
 
-SSH (Secure Shell) is the main way to manage the Raspberry Pi remotely, so it should be secured early.
+SSH is the main way to manage the Raspberry Pi remotely, so it should be secured early.
 
 Edit the SSH server configuration file:
 
