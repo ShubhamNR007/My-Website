@@ -1,6 +1,412 @@
 ---
-title: Home-Lab Overview
-description: 'Project in progress'
-order: 1
+title: "Getting started"
+description: "A secure, headless baseline configuration for a Raspberry Pi running Ubuntu Server 24.04 LTS."
+publishDate: "2026-02-28"
+tags:
+  - raspberry-pi
+  - home-lab
+  - ubuntu
+draft: false
 ---
 
+---
+
+This guide walks through creating a clean baseline system for a headless Raspberry Pi running Ubuntu Server 24.04 LTS.
+
+The goal is not to deploy services yet, but to prepare a stable and secure foundation that future projects can build on — containers, VPNs, monitoring tools, self-hosted apps, or experiments.
+
+In my case:
+
+- Fresh OS install
+- Headless setup (no monitor or keyboard)
+- Primary user with sudo privileges
+- Secure SSH access using keys only
+- Firewall, automatic updates, and basic maintenance configured
+
+Your values (hostname, username, network settings) can be different.
+
+---
+
+## Part 1 — Preparing the SD Card
+
+### Format the SD Card
+
+Insert the SD card into your computer and format it using your system’s disk utility or the SD Card Formatter tool.
+
+Starting with a clean card avoids boot problems caused by leftover partitions or corrupted data.
+
+![img](SD-Card-formater.png)
+
+---
+
+### Write Ubuntu Server Using Raspberry Pi Imager
+
+Download and launch the official Raspberry Pi Imager from the Raspberry [Pi website](https://www.raspberrypi.com/software/) and choose:
+
+Operating System: *Ubuntu Server 24.04 LTS (64-bit)*
+
+Ubuntu Server is lightweight, stable, and well suited for long-running services without a graphical interface.
+
+Select the correct SD card as the target device. The contents will be erased.
+
+![img](Ubuntu-Server-24.04-LTS.png)
+
+---
+
+### Select Target SD Card
+
+Choose the correct storage device. Everything on it will be erased.
+
+![img](Select-Target-SD-Card.png)
+
+---
+
+### Set Hostname
+
+I used:
+
+```
+pi-lab
+```
+
+You can choose any meaningful name. The hostname helps identify the device on your network, especially if you operate multiple systems.
+
+![img](Set-Hostname.png)
+
+---
+
+### Time Zone and Region
+
+Select your local time zone.
+
+Accurate time is important for logs, updates, and secure connections.
+
+![img](Time-Zone-and-Region.png)
+
+---
+
+### Username and Password
+
+Create your primary user account.
+
+I created:
+
+```
+Username: shub
+```
+
+Choose a strong password. This account will have administrative privileges via sudo and will be used for all management tasks.
+
+![img](Username-and-Password.png)
+
+---
+
+### Wi-Fi Configuration (Optional)
+
+If you are not using Ethernet, enter your Wi-Fi SSID and password so the device connects automatically on boot.
+
+Even when Ethernet is available, configuring Wi-Fi can be useful as a fallback.
+
+![img](Wi-Fi_Configuration.png)
+
+---
+
+### Generate an SSH Key (Required)
+
+On your computer, generate an SSH key for the hostname that you set for your machine:
+
+```bash
+ssh-keygen -t ed25519 -C "pi-lab"
+```
+
+Accept the defaults and optionally set a passphrase.
+
+This key will be used for secure remote login without passwords.
+
+---
+
+### Configure SSH in Imager
+
+Enable SSH and select:
+
+`Use public key authentication`
+
+Paste your public key (typically from `~/.ssh/id_ed25519.pub`).
+
+This allows secure access immediately after the system boots.
+
+![img](SSH-public-key-authentication.png)
+
+---
+
+### Write the Image
+
+Confirm the summary and write the OS to the SD card. Wait for writing and verification to complete.
+
+![img](Write-the-Image.png)
+
+---
+
+### First Boot and Connection
+
+Insert the SD card into the Raspberry Pi and power it on.
+
+Wait a minute or two for the system to boot and obtain a network address.
+
+Find the IP address from your router or network scanner, then connect to your pi via ssh:
+
+```bash
+ssh shub@192.168.1.69
+```
+
+Use your SSH key and passphrase when prompted.
+
+---
+
+## Part 2 — Baseline Security Configuration
+
+### Disable the Root Account
+
+```bash
+sudo passwd -l root
+```
+
+Direct root login is unnecessary on modern Linux systems. Administrative tasks can be performed safely using sudo.
+
+---
+
+## Part 3 — System Updates
+
+### Enable Update Channels
+
+Edit the repository configuration:
+
+```bash
+sudo nano /etc/apt/sources.list.d/ubuntu.sources
+```
+
+Find the line starting with `Suites:` and ensure it includes:
+
+```
+Suites: noble noble-updates noble-security
+```
+
+This enables both regular updates and security patches.
+
+---
+
+### Enable Automatic Security Updates
+
+Install unattended upgrades:
+
+```bash
+sudo apt install unattended-upgrades
+sudo dpkg-reconfigure --priority=low unattended-upgrades
+```
+
+Choose **Yes** when prompted.
+
+Security patches will now install automatically in the background.
+
+---
+
+### Perform Initial Full Update
+
+```bash
+sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y
+```
+
+This brings the system completely up to date and removes unused packages.
+
+---
+
+### Install Basic Networking Tools
+
+```bash
+sudo apt install net-tools
+```
+
+This package provides utilities such as `ifconfig`, which are helpful for troubleshooting.
+
+---
+
+## Part 4 — Firewall Configuration
+
+### Install UFW
+
+```bash
+sudo apt install ufw
+```
+
+### Set Secure Defaults
+
+```bash
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+```
+
+All unsolicited inbound connections are blocked by default.
+
+---
+
+### Allow SSH Only From Trusted Devices
+
+Replace the addresses below with your own trusted machines:
+
+```bash
+sudo ufw allow from 192.168.1.72 to any port 22 proto tcp
+sudo ufw allow from 192.168.1.71 to any port 22 proto tcp
+sudo ufw allow from 100.109.113.127 to any port 22 proto tcp
+```
+
+Restricting SSH access significantly reduces the attack surface.
+
+---
+
+### Enable the Firewall
+
+```bash
+sudo ufw enable
+sudo ufw status verbose
+```
+
+---
+
+## Part 5 — Harden SSH
+
+Edit the SSH server configuration:
+
+```bash
+sudo nano /etc/ssh/sshd_config
+```
+
+Ensure the following settings are present:
+
+```
+PasswordAuthentication no
+PermitRootLogin no
+PubkeyAuthentication yes
+```
+
+Restart SSH:
+
+```bash
+sudo systemctl restart ssh
+```
+
+Password-based logins are now disabled, preventing automated brute-force attempts.
+
+---
+
+## Part 6 — Automatic Weekly Maintenance
+
+Security updates are automatic, but full upgrades should still run periodically.
+
+### Create Update Script
+
+```bash
+sudo nano /usr/local/bin/weekly-update.sh
+```
+
+Paste:
+
+```bash
+#!/bin/bash
+/usr/bin/apt update
+/usr/bin/apt upgrade -y
+/usr/bin/apt autoremove -y
+/usr/bin/apt autoclean
+```
+
+Make it executable and restrict access:
+
+```bash
+sudo chmod +x /usr/local/bin/weekly-update.sh
+sudo chmod 700 /usr/local/bin/weekly-update.sh
+```
+
+---
+
+### Create Systemd Service
+
+Create `/etc/systemd/system/weekly-update.service`:
+
+```ini
+[Unit]
+Description=Weekly System Update
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/weekly-update.sh
+User=root
+```
+
+---
+
+### Create Timer
+
+Create `/etc/systemd/system/weekly-update.timer`:
+
+```ini
+[Unit]
+Description=Run weekly update
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+Enable the timer:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now weekly-update.timer
+systemctl list-timers
+```
+
+Systemd timers are reliable and will run missed jobs after downtime.
+
+---
+
+## Part 7 — Prevent Log Storage Exhaustion
+
+System logs can grow indefinitely and fill the SD card if left unmanaged.
+
+Edit journald configuration:
+
+```bash
+sudo nano /etc/systemd/journald.conf
+```
+
+Uncomment and set:
+
+```
+SystemMaxUse=200M
+```
+
+Restart logging:
+
+```bash
+sudo systemctl restart systemd-journald
+```
+
+---
+
+## Final Result
+
+The Raspberry Pi is now ready to serve as a stable baseline for future homelab deployments.
+
+This configuration provides:
+
+- Secure SSH access using keys only  
+- Root login disabled  
+- Firewall restricting inbound traffic  
+- Automatic security updates  
+- Scheduled maintenance  
+- Controlled log growth  
+- Clean, predictable environment for future projects  
+
+From here, services such as Docker, VPNs, monitoring systems, and self-hosted applications can be installed on top of a well-prepared foundation.
