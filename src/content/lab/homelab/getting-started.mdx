@@ -6,8 +6,10 @@ tags:
   - raspberry-pi
   - home-lab
   - ubuntu
-draft: false
+order: 1
 ---
+
+import { Aside, Steps } from 'astro-pure/user'
 
 ---
 
@@ -17,7 +19,7 @@ Before installing applications, containers, VPNs, dashboards, or security tools,
 
 The setup uses a Raspberry Pi running Ubuntu Server 24.04 LTS in a headless configuration, meaning the device runs without a monitor, keyboard, or mouse and is managed entirely over the network. This approach is typical for home servers because it reduces power usage, clutter, and attack surface while allowing the device to run continuously in the background.
 
-By the end of this guide, the Raspberry Pi will function as a clean baseline server with essential protections and automation in place. It will not host any services yet — instead, it will be ready for them.
+By the end of this guide, the Raspberry Pi will function as a clean baseline server with essential protections and automation in place. It will not host any services yet instead, it will be ready for them.
 
 This baseline includes:
 
@@ -28,151 +30,146 @@ This baseline includes:
 - Automatic installation of security updates
 - Scheduled system maintenance
 - Log size limits to prevent storage exhaustion
-- A stable environment suitable for long-term uptime
 
+
+<Aside>  
 In my setup, I use a dedicated `shub` user with sudo privileges and a hostname of `pi-lab`, but you can choose names and settings that match your own environment.
 
 Once this foundation is complete, future articles in this series will build on it by adding networking tools, container platforms, monitoring systems, VPN access, and other self-hosted services.
+</Aside>  
 
 ---
 
-## Part 1 — Preparing the SD Card
+## Part 1: Preparing the SD Card
 
-### Format the SD Card
+<Steps>
 
-Insert the SD card into your computer and format it using your system’s disk utility or the SD Card Formatter tool.
+1.  **Format the SD Card**
 
-Starting with a clean card avoids boot problems caused by leftover partitions or corrupted data.
+    Insert the SD card into your computer and format it using your system’s disk utility or the SD Card Formatter tool.
 
-![img](SD-Card-formater.png)
+    Starting with a clean card avoids boot problems caused by leftover partitions or corrupted data.
 
----
+    ![img](getting-started/SD-Card-formater.png)
 
-### Write Ubuntu Server Using Raspberry Pi Imager
 
-Download and launch the official Raspberry Pi Imager from the Raspberry Pi [website](https://www.raspberrypi.com/software/) and choose:
+2.  **Write Ubuntu Server Using Raspberry Pi Imager**
 
-Operating System: `Ubuntu Server 24.04 LTS (64-bit)`
+    Download and launch the official Raspberry Pi Imager from the Raspberry Pi [website](https://www.raspberrypi.com/software/) and choose:
 
-Ubuntu Server is lightweight, stable, and well suited for long-running services without a graphical interface.
+    Operating System: `Ubuntu Server 24.04 LTS (64-bit)`
 
-Select the correct SD card as the target device. The contents will be erased.
+    Ubuntu Server is lightweight, stable, and well suited for long-running services without a graphical interface.
 
-![img](Ubuntu-Server-24.04-LTS.png)
+    Select the correct SD card as the target device. The contents will be erased.
 
----
+    ![img](getting-started/Ubuntu-Server-24.04-LTS.png)
 
-### Select Target SD Card
 
-Choose the correct storage device. Everything on it will be erased.
+3.  **Select Target SD Card**
 
-![img](Select-Target-SD-Card.png)
+    Choose the correct storage device. Everything on it will be erased.
 
----
+    ![img](getting-started/Select-Target-SD-Card.png)
 
-### Set Hostname
 
-I used below hostname for my machine:
+4.  **Set Hostname**
 
-```
-pi-lab
-```
+    I used below hostname for my machine:
 
-You can choose any meaningful name. The hostname helps identify the device on your network, especially if you operate multiple systems.
+    ```
+    pi-lab
+    ```
 
-![img](Set-Hostname.png)
+    You can choose any meaningful name. The hostname helps identify the device on your network, especially if you operate multiple systems.
 
----
+    ![img](getting-started/Set-Hostname.png)
 
-### Time Zone and Region
 
-Select your local time zone.
+5.  **Time Zone and Region**
 
-Accurate time is important for logs, updates, and secure connections.
+    Select your local time zone.
 
-![img](Time-Zone-and-Region.png)
+    Accurate time is important for logs, updates, and secure connections.
 
----
+    ![img](getting-started/Time-Zone-and-Region.png)
 
-### Username and Password
 
-Create your primary user account.
+6.  **Username and Password**
 
-I created:
+    Create your primary user account.
 
-```
-Username: shub
-```
+    I created:
 
-Choose a strong password. This account will have administrative privileges via sudo and will be used for all management tasks.
+    ```
+    Username: shub
+    ```
 
-![img](Username-and-Password.png)
+    Choose a strong password. This account will have administrative privileges via sudo and will be used for all management tasks.
 
----
+    ![img](getting-started/Username-and-Password.png)
 
-### Wi-Fi Configuration (Optional)
 
-If you are not using Ethernet, enter your Wi-Fi SSID and password so the device connects automatically on boot.
+7.  **Optional: Wi-Fi Configuration**
 
-Even when Ethernet is available, configuring Wi-Fi can be useful as a fallback.
+    If you are not using Ethernet, enter your Wi-Fi SSID and password so the device connects automatically on boot.
 
-![img](Wi-Fi_Configuration.png)
+    Even when Ethernet is available, configuring Wi-Fi can be useful as a fallback.
 
----
+    ![img](getting-started/Wi-Fi_Configuration.png)
 
-### Generate an SSH Key (Required)
 
-On your computer, generate an SSH key for the hostname that you set for your machine:
+8.  **Required: Generate an SSH Key**
 
-```bash
-ssh-keygen -t ed25519 -C "pi-lab"
-```
+    On your computer, generate an SSH key for the hostname that you set for your machine:
 
-Accept the defaults and optionally set a passphrase.
+    ```bash
+    ssh-keygen -t ed25519 -C "pi-lab"
+    ```
 
-This key will be used for secure remote login without passwords.
+    Accept the defaults and optionally set a passphrase.
 
----
+    This key will be used for secure remote login without passwords.
 
-### Configure SSH in Imager
 
-Enable SSH and select:
+9.  **Configure SSH in Imager**
 
-`Use public key authentication`
+    Enable SSH and select:
 
-Paste your public key (typically from `~/.ssh/id_ed25519.pub`).
+    `Use public key authentication`
 
-This allows secure access immediately after the system boots.
+    Paste your public key (typically from `~/.ssh/id_ed25519.pub`).
 
-![img](SSH-public-key-authentication.png)
+    This allows secure access immediately after the system boots.
 
----
+    ![img](getting-started/SSH-public-key-authentication.png)
 
-### Write the Image
 
-Confirm the summary and write the OS to the SD card. Wait for writing and verification to complete.
+10. **Write the Image**
 
-![img](Write-the-Image.png)
+    Confirm the summary and write the OS to the SD card. Wait for writing and verification to complete.
 
----
+    ![img](getting-started/Write-the-Image.png)
 
-### First Boot and Connection
 
-Insert the SD card into the Raspberry Pi and power it on.
+11. **First Boot and Connection**
 
-Wait a minute or two for the system to boot and obtain a network address.
+    Insert the SD card into the Raspberry Pi and power it on.
 
-Find the IP address from your router or network scanner, then connect to your pi via ssh:
+    Wait a minute or two for the system to boot and obtain a network address.
 
-```bash
-ssh shub@192.168.1.69
-```
+    Find the IP address from your router or network scanner, then connect to your pi via ssh:
 
-Use your SSH key and passphrase when prompted.
+    ```bash
+    ssh shub@192.168.1.69
+    ```
+
+    Use your SSH key and passphrase when prompted.
+</Steps>
 
 ---
 
-## Part 2 — Baseline Security Configuration
+## Part 2: Baseline Security Configuration
 
 ### Disable the Root Account
 
@@ -184,102 +181,105 @@ Direct root login is unnecessary on modern Linux systems. Administrative tasks c
 
 ---
 
-## Part 3 — System Updates
+## Part 3: System Updates
 
-### Enable Update Channels
+<Steps>
 
-Edit the repository configuration:
+1. **Enable Update Channels**
 
-```bash
-sudo nano /etc/apt/sources.list.d/ubuntu.sources
-```
+    Edit the repository configuration:
 
-Find the line starting with `Suites:` and ensure it includes:
+    ```bash
+    sudo nano /etc/apt/sources.list.d/ubuntu.sources
+    ```
 
-```
-Suites: noble noble-updates noble-security
-```
+    Find the line starting with `Suites:` and ensure it includes:
 
-This enables both regular updates and security patches.
+    ```
+    Suites: noble noble-updates noble-security
+    ```
 
----
+    This enables both regular updates and security patches.
 
-### Enable Automatic Security Updates
 
-Install unattended upgrades:
+2. **Enable Automatic Security Updates**
 
-```bash
-sudo apt install unattended-upgrades
-sudo dpkg-reconfigure --priority=low unattended-upgrades
-```
+    Install unattended upgrades:
 
-Choose `Yes` when prompted.
+    ```bash
+    sudo apt install unattended-upgrades
+    sudo dpkg-reconfigure --priority=low unattended-upgrades
+    ```
 
-Security patches will now install automatically in the background when available.
+    Choose `Yes` when prompted.
 
----
+    Security patches will now install automatically in the background when available.
 
-### Perform Initial Full Update
 
-```bash
-sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y
-```
+3. **Perform Initial Full Update**
 
-This brings the system completely up to date and removes unused packages.
+    ```bash
+    sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y
+    ```
 
----
+    This brings the system completely up to date and removes unused packages.
 
-### Install Basic Networking Tools
 
-```bash
-sudo apt install net-tools
-```
+4. **Install Basic Networking Tools**
 
-This package provides utilities such as `ifconfig`, which are helpful for troubleshooting.
+    ```bash
+    sudo apt install net-tools
+    ```
 
----
+    This package provides utilities such as `ifconfig`, which are helpful for troubleshooting.
 
-## Part 4 — Firewall Configuration
-
-### Install UFW
-
-```bash
-sudo apt install ufw
-```
-
-### Set Secure Defaults
-
-```bash
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-```
-
-All unsolicited inbound connections are blocked by default and outbound are allowed.
+</Steps>
 
 ---
 
-### Allow SSH Only From Trusted Devices
+## Part 4: Firewall Configuration
 
-By default, the firewall blocks all incoming connections. We now explicitly allow SSH access, but only from devices that you trust, such as your laptop or another management machine on your network.
+<Steps>
 
-Replace the IP address below with the address of your own device (Lan or VPN):
+1. **Install UFW**
 
-```bash
-sudo ufw allow from 192.168.1.10 to any port 22 proto tcp
-```
+    ```bash
+    sudo apt install ufw
+    ```
+
+2. **Set Secure Defaults**
+
+    ```bash
+    sudo ufw default deny incoming
+    sudo ufw default allow outgoing
+    ```
+
+    All unsolicited inbound connections are blocked by default and outbound are allowed.
+
+
+3. **Allow SSH Only From Trusted Devices**
+
+    By default, the firewall blocks all incoming connections. We now explicitly allow SSH access, but only from devices that you trust, such as your laptop or another management machine on your network.
+
+    Replace the IP address below with the address of your own device (Lan or VPN):
+
+    ```bash
+    sudo ufw allow from 192.168.1.10 to any port 22 proto tcp
+    ```
+
+
+4. **Enable the Firewall**
+
+    ```bash
+    sudo ufw enable
+    sudo ufw status verbose
+    ```
+
+</Steps>
 
 ---
 
-### Enable the Firewall
-
-```bash
-sudo ufw enable
-sudo ufw status verbose
-```
-
----
-
-## Part 5 — Harden SSH
+## Part 5: Harden SSH
 
 SSH is the main way to manage the Raspberry Pi remotely, so it should be secured early.
 
@@ -297,92 +297,96 @@ PermitRootLogin no
 PubkeyAuthentication yes
 ```
 
-These settings disable password-based logins and prevent direct root access, allowing only SSH key authentication.
-
 Restart the SSH service to apply the changes:
 
 ```bash
 sudo systemctl restart ssh
 ```
 
-After this step, only devices with the correct private key can log in, which helps protect the server from automated brute-force attacks.
+After this step, only devices with the correct private key can log in.
+
+<Aside>
+These settings disable password-based logins and prevent direct root access, allowing only SSH key authentication.
+</Aside>
 
 ---
 
-## Part 6 — Automatic Weekly Maintenance
+## Part 6: Automatic Weekly Maintenance
 
 Security updates are automatic, but full upgrades should still run periodically.
 
-### Create Update Script
+<Steps>
 
-```bash
-sudo nano /usr/local/bin/weekly-update.sh
-```
+1. **Create Update Script**
 
-Paste:
+    ```bash
+    sudo nano /usr/local/bin/weekly-update.sh
+    ```
 
-```bash
-#!/bin/bash
-/usr/bin/apt update
-/usr/bin/apt upgrade -y
-/usr/bin/apt autoremove -y
-/usr/bin/apt autoclean
-```
+    Paste:
 
-Make it executable and restrict access:
+    ```bash
+    #!/bin/bash
+    /usr/bin/apt update
+    /usr/bin/apt upgrade -y
+    /usr/bin/apt autoremove -y
+    /usr/bin/apt autoclean
+    ```
 
-```bash
-sudo chmod +x /usr/local/bin/weekly-update.sh
-sudo chmod 700 /usr/local/bin/weekly-update.sh
-```
+    Make it executable and restrict access:
+
+    ```bash
+    sudo chmod +x /usr/local/bin/weekly-update.sh
+    sudo chmod 700 /usr/local/bin/weekly-update.sh
+    ```
+
+
+2. **Create Systemd Service**
+
+    Create `/etc/systemd/system/weekly-update.service`:
+
+    ```ini
+    [Unit]
+    Description=Weekly System Update
+
+    [Service]
+    Type=oneshot
+    ExecStart=/usr/local/bin/weekly-update.sh
+    User=root
+    ```
+
+
+3. **Create Timer**
+
+    Create `/etc/systemd/system/weekly-update.timer`:
+
+    ```ini
+    [Unit]
+    Description=Run weekly update
+
+    [Timer]
+    OnCalendar=weekly
+    Persistent=true
+
+    [Install]
+    WantedBy=timers.target
+    ```
+
+    Enable the timer:
+
+    ```bash
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now weekly-update.timer
+    systemctl list-timers
+    ```
+
+    Systemd timers are reliable and will run missed jobs after downtime.
+
+</Steps>
 
 ---
 
-### Create Systemd Service
-
-Create `/etc/systemd/system/weekly-update.service`:
-
-```ini
-[Unit]
-Description=Weekly System Update
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/weekly-update.sh
-User=root
-```
-
----
-
-### Create Timer
-
-Create `/etc/systemd/system/weekly-update.timer`:
-
-```ini
-[Unit]
-Description=Run weekly update
-
-[Timer]
-OnCalendar=weekly
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-```
-
-Enable the timer:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now weekly-update.timer
-systemctl list-timers
-```
-
-Systemd timers are reliable and will run missed jobs after downtime.
-
----
-
-## Part 7 — Prevent Log Storage Exhaustion
+## Part 7: Prevent Log Storage Exhaustion
 
 System logs can grow indefinitely and fill the SD card if left unmanaged.
 
@@ -405,19 +409,5 @@ sudo systemctl restart systemd-journald
 ```
 
 ---
-
-## Final Result
-
-The Raspberry Pi is now ready to serve as a stable baseline for future homelab deployments.
-
-This configuration provides:
-
-- Secure SSH access using keys only  
-- Root login disabled  
-- Firewall restricting inbound traffic  
-- Automatic security updates  
-- Scheduled maintenance  
-- Controlled log growth  
-- Clean, predictable environment for future projects  
 
 From here, services such as Docker, VPNs, monitoring systems, and self-hosted applications can be installed on top of a well-prepared foundation.

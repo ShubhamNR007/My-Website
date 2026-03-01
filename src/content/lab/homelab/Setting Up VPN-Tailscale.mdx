@@ -1,0 +1,180 @@
+---
+title: "Setting Up VPN"
+description: "Configure a zero‑trust VPN using Tailscale to securely access your homelab without exposing services to the internet."
+publishDate: "2026-03-01"
+tags:
+  - raspberry-pi
+  - home-lab
+  - tailscale
+order: 2
+---
+
+import { Aside } from 'astro-pure/user'
+
+---
+
+To access the home lab securely from anywhere without exposing services to the public internet, I am using `Tailscale`, a zero‑trust VPN built on WireGuard.
+
+In the previous phase, the server was hardened and locked down (including a default‑deny with `UFW`). This means remote access must now be `explicitly allowed and strongly authenticated`. Tailscale provides a secure way to do that without weakening the security posture.
+
+Traditional VPN setups often require port forwarding or exposing services publicly. Tailscale avoids this entirely by creating a private, encrypted network between trusted devices ideal for a security‑focused homelab.
+
+---
+
+### Why I Chose Tailscale
+
+- No port forwarding required  
+- Works behind NAT / ISP restrictions  
+- End‑to‑end encrypted connections (WireGuard)  
+- Device‑level authentication  
+- Very low maintenance overhead  
+- Suitable for real‑world security operations  
+
+<Aside>  
+This lab remains completely invisible to internet scanners. Only authenticated devices inside the private network can reach it.
+</Aside>
+
+---
+
+### Install Tailscale on Your Devices
+
+Install Tailscale on:
+
+- Raspberry Pi (lab server)
+- Laptop / Desktop
+- Mobile device (optional but recommended)
+
+Download from the official website:
+
+https://tailscale.com/download/linux
+
+Use the same account on all devices so they join the same private network (called a *tailnet*).
+
+<Aside>
+Only devices authenticated to your account can communicate with each other.
+</Aside>
+
+---
+
+### Install Tailscale on Raspberry Pi
+
+Run the official installation script:
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+```
+
+This installs the Tailscale service and CLI tools.
+
+---
+
+### Start Tailscale and Authenticate
+
+Bring the VPN interface up:
+
+```bash
+sudo tailscale up
+```
+
+The command will output a login URL.
+
+1. Open the URL in your browser  
+2. Sign in or create a Tailscale account  
+3. Authorize the device  
+
+Once approved, your Raspberry Pi becomes part of your private VPN network.
+
+<Aside type='caution' title='Access is tied to your identity, not just an IP address'>  
+Only devices logged into and approved in your Tailscale account can connect to the lab. Simply knowing the server’s IP is not enough, unauthorized devices outside your tailnet cannot access it. If a device is lost or no longer trusted, its access can be revoked instantly from the admin panel.
+</Aside>
+
+---
+
+### Manage Devices (Admin Console)
+
+All connected machines can be managed from the web dashboard:
+
+https://login.tailscale.com/admin/machines
+
+From here you can:
+
+- View connected devices  
+- Rename machines  
+- Remove access  
+- Approve routing changes  
+- Monitor connection status  
+- And many more
+
+---
+
+### Optional: Share Your Entire Local Network
+
+Tailscale can expose your home LAN to other VPN devices by advertising routes.
+
+```bash
+sudo tailscale set --advertise-routes=192.168.1.0/24
+```
+
+Approve the route in the admin dashboard.
+
+<Aside type='caution' title='You should know it!'>
+This is not required for basic remote access and increases exposure.    
+Enable only if necessary. I am not enabling this yet.   
+It will be revisited if future homelab services require LAN‑wide access.
+</Aside>
+
+---
+
+### Important: Firewall Integration
+
+In the previous setup, UFW was configured with a default deny policy, blocking all incoming connections except some trsuted Lan IPs.
+
+Tailscale traffic enters via a virtual interface, so we must explicitly allow only the required access.
+
+First, identify your device’s Tailscale IPs from your Tailscale admin dashboard:
+
+Then whitelist SSH access only from trusted *tailnet* devices:
+
+```bash
+sudo ufw allow from <tailscale-ip> to any port 22 proto tcp
+```
+
+Example:
+
+```bash
+sudo ufw allow from 100.101.102.103 to any port 22 proto tcp
+```
+Repeat for each trusted device when needed.
+
+---
+
+### Access Your Pi Remotely
+
+After authentication, your Pi will receive a private Tailscale IP address (typically `100.x.x.x`).
+
+Check it with:
+
+```bash
+tailscale ip -4
+```
+
+You can now SSH from any authorized device:
+
+```bash
+ssh username@100.x.x.x
+```
+---
+
+<Aside type='danger' title='Security Considerations'>
+
+- Enable MFA on your Tailscale account  
+- Use a dedicated account for the lab
+- Regularly review connected devices  
+- Remove unused machines immediately  
+- Avoid exposing your full LAN unless necessary  
+
+</Aside>
+
+---
+
+With this setup, the homelab remains private, remotely accessible, strongly authenticated, and aligned with the hardened baseline configuration.
