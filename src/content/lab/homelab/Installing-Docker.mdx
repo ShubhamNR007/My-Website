@@ -1,0 +1,217 @@
+---
+description: Install and configure Docker on the homelab server with a dedicated service account and structured container directory.
+order: 3
+publishDate: 2026-03-07
+tags:
+- raspberry-pi
+- home-lab
+- docker
+- containers
+title: Installing Docker
+---
+
+import { Aside } from 'astro-pure/user'
+
+------------------------------------------------------------------------
+
+Docker is used in this homelab as the primary container runtime for
+deploying services. Running services inside containers keeps the system
+clean, reproducible, and easier to maintain as the lab grows.
+
+This guide installs Docker using the official Docker repository and
+prepares a dedicated service account for running containers securely.
+
+Official documentation:
+
+https://docs.docker.com/engine/install/ubuntu/
+
+------------------------------------------------------------------------
+
+### Remove Conflicting Packages
+
+Some Linux distributions include unofficial Docker packages that may
+conflict with the official Docker repository.
+
+Remove any previously installed packages before continuing.
+
+``` bash
+sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc | cut -f1)
+```
+
+------------------------------------------------------------------------
+
+### Install using the `apt` repository
+
+Before you install Docker Engine for the first time on a new host machine, you need to set up the Docker `apt` repository. Afterward, you can install and update Docker from the repository.
+
+``` bash
+# Add Docker's official GPG key:
+sudo apt update
+sudo apt install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+sudo apt update
+```
+
+------------------------------------------------------------------------
+
+### Install the Docker packages
+
+To install the latest version, run:
+
+``` bash
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+These components include:
+
+-   **docker-ce** -- Docker Engine
+-   **docker-ce-cli** -- Docker CLI tools
+-   **containerd.io** -- container runtime
+-   **docker-buildx-plugin** -- advanced build features
+-   **docker-compose-plugin** -- multi‑container application support
+
+------------------------------------------------------------------------
+
+### Verify Installation
+
+Run the test container to confirm Docker is working correctly.
+
+``` bash
+sudo docker run hello-world
+```
+
+If successful, Docker will download a test image and print a
+confirmation message.
+
+------------------------------------------------------------------------
+
+### Create a Dedicated Docker Service Account
+
+Containers in this homelab run under a dedicated system account instead of the primary user account.
+This improves separation between system administration and container execution.
+Create a system account with no login shell.
+
+``` bash
+sudo adduser --system --shell /usr/sbin/nologin iamdocker
+```
+
+Verify the account configuration.
+
+``` bash
+grep iamdocker /etc/passwd
+```
+
+
+<Aside>
+The shell should be set to `/usr/sbin/nologin`, preventing interactive logins for this account.
+</Aside>
+
+
+------------------------------------------------------------------------
+
+### Allow Docker Access
+
+Docker is controlled through the `docker` group. Members of this group can communicate with the Docker daemon.
+Add the service account to the Docker group.
+
+``` bash
+sudo usermod -aG docker iamdocker
+```
+
+<Aside type="caution" title="Docker group privileges">
+Membership in the docker group effectively grants root‑level
+capabilities through Docker. In this lab the risk is controlled because
+the account cannot log in and exists only for container workloads.
+</Aside>
+
+------------------------------------------------------------------------
+
+### Test Docker Access
+
+Verify that the service account can communicate with Docker.
+
+``` bash
+sudo -u iamdocker docker ps
+```
+
+If the command executes successfully, the account is configured
+correctly.
+
+------------------------------------------------------------------------
+
+### Clean Up Test Containers
+
+The `hello-world` container and image were only used for verification
+and can be removed.
+
+Remove stopped containers:
+
+``` bash
+sudo -u iamdocker docker rm $(sudo -u iamdocker docker ps -aq)
+```
+
+Remove the image:
+
+``` bash
+sudo -u iamdocker docker rmi hello-world
+```
+
+Verify that nothing remains:
+
+``` bash
+sudo -u iamdocker docker ps -a
+sudo -u iamdocker docker images
+```
+
+------------------------------------------------------------------------
+
+### Create Docker Stacks Directory
+
+All container deployments in this homelab are stored under a single
+directory for consistency.
+
+Create the directory:
+
+``` bash
+sudo mkdir -p /opt/dockerstacks
+```
+
+Assign ownership to the Docker service account:
+
+``` bash
+sudo chown iamdocker:nogroup /opt/dockerstacks
+```
+
+Restrict permissions:
+
+``` bash
+sudo chmod 750 /opt/dockerstacks
+```
+
+Verify the directory:
+
+``` bash
+ls -la /opt/
+```
+
+------------------------------------------------------------------------
+
+Docker is now installed and configured for the homelab environment.
+
+Future services will be deployed as container stacks inside
+`/opt/dockerstacks`, managed by the dedicated `iamdocker` service
+account. This structure keeps container workloads isolated from system
+administration and maintains a consistent deployment layout across the
+lab.
