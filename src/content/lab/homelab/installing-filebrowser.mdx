@@ -1,0 +1,267 @@
+---
+description: "Install FileBrowser using Docker. Includes exFAT SSD mount, HTTPS, and restricted service user."
+publishDate: 2026-03-14
+order: 6
+tags:
+- filebrowser
+- docker
+- raspberry-pi
+- home-lab
+title: Installing FileBrowser
+---
+
+import { Aside } from 'astro-pure/user'
+
+---
+
+This document describes the steps used to deploy FileBrowser in the homelab.
+
+Key characteristics of this setup:
+
+- Runs in Docker
+- Uses external exFAT SSD as storage
+- Runs as a low‑privilege service user
+- Uses self‑signed HTTPS
+- Accessible from LAN and Tailscale
+
+---
+
+### Create FileBrowser system user
+
+Create a dedicated low‑privilege system account used by the service.
+
+```bash
+sudo useradd \
+  --system \
+  --uid 777 \
+  --gid nogroup \
+  --home /nonexistent \
+  --shell /usr/sbin/nologin \
+  filebrowser
+```
+
+Verify:
+
+```bash
+id filebrowser
+```
+
+---
+
+### Mount the external SSD (exFAT)
+
+Identify the disk UUID.
+
+```bash
+blkid
+```
+
+Example output:
+
+```
+/dev/sda2: UUID="<your-ssd-uuid>" TYPE="exfat"
+```
+
+Edit fstab file.
+
+```bash
+sudo nano /etc/fstab
+```
+
+Add below line (replace \<your-ssd-uuid\> with your actual UUID):
+
+```
+UUID=<your-ssd-uuid> /mnt/ssd exfat uid=777,gid=65534,umask=0022,nofail 0 0
+```
+
+Create mount directory and mount everything.
+
+```bash
+sudo mkdir -p /mnt/ssd
+sudo mount -a
+```
+
+Create the data directory used by FileBrowser.
+
+```bash
+sudo mkdir -p /mnt/ssd/data
+```
+
+Reload systemd and verify.
+
+```bash
+sudo systemctl daemon-reload
+lsblk
+df -h
+```
+
+---
+
+### Create Docker stack directories
+
+All services in this lab live under `/opt/dockerstacks`. Create the FileBrowser stack structure.
+
+```bash
+sudo mkdir -p /opt/dockerstacks/filebrowser
+sudo mkdir -p /opt/dockerstacks/filebrowser/{database,config,certs}
+```
+
+---
+
+### Create Docker Compose file
+
+```bash
+sudo -u iamdocker tee /opt/dockerstacks/filebrowser/docker-compose.yml <<EOF
+services:
+  filebrowser:
+    image: filebrowser/filebrowser:s6
+    container_name: filebrowser
+    restart: unless-stopped
+
+    networks:
+      - fb-bridge
+
+    environment:
+      - PUID=777    # filebrowser system low level account
+      - PGID=65534  # nogroup
+
+    volumes:
+      - /mnt/ssd/data:/srv
+      - /opt/dockerstacks/filebrowser/database:/database
+      - /opt/dockerstacks/filebrowser/config:/config
+      - /opt/dockerstacks/filebrowser/certs:/certs
+
+    ports:
+      # Tailscale interface
+      - "100.109.99.16:12443:443/tcp"
+      # LAN interfaces (replace with your actual IPs if different)
+      - "192.168.1.69:12443:443/tcp"
+      - "192.168.1.70:12443:443/tcp"
+
+networks:
+  fb-bridge:
+    driver: bridge
+EOF
+```
+
+---
+
+### Create FileBrowser configuration
+
+```bash
+sudo tee /opt/dockerstacks/filebrowser/config/settings.json <<EOF
+{
+  "port": 443,
+  "baseURL": "",
+  "address": "",
+  "log": "stdout",
+  "database": "/database/filebrowser.db",
+  "root": "/srv",
+  "cert": "/certs/filebrowser.crt",
+  "key": "/certs/filebrowser.key"
+}
+EOF
+```
+
+Create the empty database file.
+
+```bash
+sudo touch /opt/dockerstacks/filebrowser/database/filebrowser.db
+```
+
+---
+
+### Generate self‑signed TLS certificate
+
+Used for internal HTTPS.
+
+```bash
+sudo openssl req -x509 -nodes -days 365 \
+-newkey rsa:2048 \
+-keyout /opt/dockerstacks/filebrowser/certs/filebrowser.key \
+-out /opt/dockerstacks/filebrowser/certs/filebrowser.crt \
+-subj "/CN=pi.local"
+```
+
+### Set ownership for the service user
+
+```bash
+# compose file owned by iamdocker account
+sudo chown 999:65534 /opt/dockerstacks/filebrowser/docker-compose.yml 
+
+# runtime directories owned by filebrowser service account
+sudo chown -R 777:65534 /opt/dockerstacks/filebrowser/database
+sudo chown -R 777:65534 /opt/dockerstacks/filebrowser/config
+sudo chown -R 777:65534 /opt/dockerstacks/filebrowser/certs
+sudo chown -R 777:65534 /mnt/ssd/data
+```
+---
+
+### Start FileBrowser container
+
+```bash
+sudo -u iamdocker -s
+cd /opt/dockerstacks/filebrowser
+docker compose pull
+docker compose up -d
+```
+
+Verify container is running.
+
+```bash
+docker ps | grep filebrowser
+```
+
+---
+
+### Retrieve initial admin password
+
+Check the logs.
+
+```bash
+docker logs filebrowser
+```
+
+Look for the generated admin password.
+
+---
+
+### First login
+
+Open:
+
+```
+https://pi.local:12443
+```
+
+Default credentials:
+
+```
+username: admin
+password: <value from logs>
+```
+
+<Aside type="caution" title="Important">
+1. Open Settings
+2. Go to Profile
+3. Set a new password
+</Aside>
+
+---
+
+### Optional: Create additional users
+
+If sharing the storage with other users:
+
+1. Login as admin
+2. Open Users
+3. Create users with restricted access
+
+Examples:
+
+- read‑only users
+- specific folder access
+
+---
+
+FileBrowser is now running in the homelab. The files stored on the SSD can be accessed securely over HTTPS from devices on the LAN or connected through Tailscale.
