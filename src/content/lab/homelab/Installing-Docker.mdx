@@ -208,6 +208,20 @@ ls -la /opt/
 
 ------------------------------------------------------------------------
 
+<Aside type='danger' title='Security Considerations'>
+
+> This is a homelab setup. Docker is installed in **rootful** mode for ease of configurations and an `iamdocker` account was created only to separate monitoring/history. it does **not** remove Docker’s host-level privileges.
+
+- **Docker/root model:** Docker daemon runs as `root`, membership in the `docker` group grants effective root on the host. Treat `docker` group membership as privileged (`grep docker /etc/group`).  
+- **`iamdocker` purpose:** `iamdocker` is for monitoring/ownership isolation only and it is **not** a mitigation for privilege escalation.  
+- **Socket exposure:** do not expose or mount `/var/run/docker.sock` to untrusted containers or services.  
+- **Port exposure:** Do not publish ports default to all interfaces (`0.0.0.0`), web/admin UIs will be reachable to all connected interfaces unless bound to a specific host IP. In this series admin UIs are restricted to VPN-only access.  
+- **Firewall / iptables:** Docker alters iptables/ufw rules for container networking; published ports will bypass host firewall expectations.  
+- **Least privilege in containers:** run processes inside containers as non-root where practical and avoid unnecessary capabilities.  
+- **Image hygiene & updates:** use vetted images, scan/patch regularly, and track engine updates. 
+
+</Aside>
+
 Docker is now installed and configured for the homelab environment.
 
 Future services will be deployed as container stacks inside

@@ -153,14 +153,10 @@ sudo -u iamdocker docker compose -f /opt/dockerstacks/adguard/docker-compose.yml
             - "192.168.X.X:53:53/udp"
 
             # Admin UI HTTP (redirects to HTTPS)
-            - "100.109.X.X:11080:80/tcp"
-            - "192.168.X.X:11080:80/tcp"
-            - "192.168.X.X:11080:80/tcp"
+            # - "100.109.X.X:11080:80/tcp"
 
-            # Admin UI HTTPS
+            # Admin UI HTTPS (Limited to VPN for secuirty)
             - "100.109.X.X:11443:443/tcp"
-            - "192.168.X.X:11443:443/tcp"
-            - "192.168.X.X:11443:443/tcp"
 
             volumes:
             - /opt/dockerstacks/adguard/workdir:/opt/adguardhome/work
@@ -213,6 +209,7 @@ For public exposure, terminate TLS at a reverse proxy (Caddy/Traefik/Nginx with 
 
 <Aside type='danger' title='Operational notes & hardening'>
 
+- Expose the AdGuard admin UI only on a restricted interface to reduce the attack surface. Access should preferably be limited through a VPN.
 - Bind port 53 only to necessary interfaces. Exposing DNS to untrusted networks increases attack surface.
 - If port 53 is already in use (e.g., systemd-resolved), stop or reconfigure the host resolver before starting AdGuard.
 - Store certificates with restricted permissions (`iamdocker` owner).
