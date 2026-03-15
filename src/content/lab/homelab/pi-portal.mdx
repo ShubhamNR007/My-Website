@@ -1,0 +1,622 @@
+---
+title: "Homelab Portal"
+description: "Deploy a lightweight dashboard to access internal homelab services from a single page."
+publishDate: 2026-03-15
+order: 9
+tags:
+- raspberry-pi
+- homelab
+- nginx
+- dashboard
+---
+
+import { Steps, Aside } from 'astro-pure/user'
+
+---
+
+As more services are added to a homelab, remembering ports and URLs becomes inconvenient.   
+For example:
+
+```
+https://pi.local:11443  → AdGuard
+https://pi.local:12443  → FileBrowser
+https://pi.local:13443  → Portainer
+```
+
+A simple portal solves this by providing **one landing page** that lists all internal services with clean links and icons.
+
+Instead of remembering multiple ports, everything can be accessed from:
+
+```
+http://pi.local
+```
+
+The portal itself is a **static web page**, so it does not require any application runtime. A lightweight web server is sufficient.
+
+Nginx is used because it is efficient, minimal, and well suited for serving static content.
+
+---
+
+## Install Nginx
+
+Update package lists and install the Nginx web server.
+
+```bash
+sudo apt update
+sudo apt install nginx -y
+```
+
+Enable and start the service so it runs automatically at boot.
+
+```bash
+sudo systemctl enable nginx
+sudo systemctl start nginx
+```
+
+Verify that the service is running.
+
+```bash
+sudo systemctl status nginx
+```
+
+---
+
+## Create the Website Directory
+
+The portal files will be stored under `/var/www`.
+
+Create a dedicated directory for the portal.
+
+```bash
+sudo mkdir -p /var/www/pi-portal
+```
+
+Set proper ownership and permissions so the web server can read the files.
+
+```bash
+sudo chown -R www-data:www-data /var/www/pi-portal
+sudo chmod -R 755 /var/www/pi-portal
+```
+
+Place the portal files inside this directory.
+
+Example structure:
+
+```
+/var/www/pi-portal
+│
+├── index.html
+└── assets
+    ├── favicon.png
+    ├── adguard.png
+    ├── filebrowser.png
+    └── portainer.png
+```
+
+```html title="index.html"
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+
+<title>Pi Portal</title>
+
+<link rel="icon" type="image/png" href="./assets/favicon.png">
+
+<style>
+:root{
+--bg-dark:#0f1724;
+--bg-light:#f6f8fb;
+--text-dark:#e8eef8;
+--text-light:#0b1220;
+--glass:rgba(255,255,255,0.04);
+--glass-soft:rgba(255,255,255,0.02);
+--glass-strong:rgba(255,255,255,0.06);
+--radius:14px;
+--maxwidth:1100px;
+font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+
+*{box-sizing:border-box}
+
+html,body{
+margin:0;
+height:100%;
+background:var(--bg-dark);
+color:var(--text-dark);
+-webkit-font-smoothing:antialiased;
+}
+
+html.theme-light body{
+background:linear-gradient(#f7f9fc,#eef3fb);
+color:var(--text-light);
+}
+
+/* Layout */
+
+.wrap{
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:flex-start;
+padding:9vh 16px 40px;
+}
+
+.panel{
+width:100%;
+max-width:var(--maxwidth);
+border-radius:18px;
+padding:24px;
+background:linear-gradient(rgba(255,255,255,.02),rgba(255,255,255,.01));
+border:1px solid var(--glass);
+backdrop-filter:blur(12px) saturate(120%);
+box-shadow:0 22px 60px rgba(0,0,0,.45);
+}
+
+/* Header */
+
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:12px;
+margin-bottom:24px;
+padding:14px 16px;
+
+background:linear-gradient(
+rgba(255,255,255,0.04),
+rgba(255,255,255,0.015)
+);
+
+border:1px solid var(--glass-strong);
+border-radius:12px;
+
+backdrop-filter:blur(10px) saturate(120%);
+box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+html.theme-light .header{
+background:linear-gradient(
+rgba(255,255,255,0.6),
+rgba(255,255,255,0.25)
+);
+border:1px solid rgba(0,0,0,0.06);
+}
+
+/* Brand */
+
+.brand{
+display:flex;
+align-items:center;
+gap:12px;
+}
+
+.logo{
+width:52px;
+height:52px;
+border-radius:12px;
+display:grid;
+place-items:center;
+font-weight:700;
+border:1px solid var(--glass);
+background:linear-gradient(rgba(255,255,255,.03),rgba(255,255,255,.01));
+}
+
+.title{
+font-size:18px;
+font-weight:700;
+}
+
+.subtitle{
+font-size:13px;
+opacity:.7;
+margin-top:4px;
+}
+
+/* Controls */
+
+.controls{
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+.search{
+padding:8px 12px;
+border-radius:10px;
+border:1px solid var(--glass);
+background:var(--glass-soft);
+color:inherit;
+font-size:13px;
+outline:none;
+min-width:180px;
+}
+
+.clock{
+text-align:right;
+font-size:13px;
+}
+
+.clock .time{
+font-weight:700;
+font-size:15px;
+}
+
+.btn{
+display:grid;
+place-items:center;
+width:38px;
+height:38px;
+border-radius:10px;
+border:1px solid var(--glass);
+background:var(--glass-soft);
+cursor:pointer;
+}
+
+/* Grid */
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+gap:14px;
+margin-top:20px;
+}
+
+.card{
+display:flex;
+align-items:center;
+gap:12px;
+padding:14px;
+border-radius:var(--radius);
+border:1px solid var(--glass);
+background:linear-gradient(rgba(255,255,255,.02),rgba(255,255,255,.01));
+cursor:pointer;
+transition:.15s ease;
+}
+
+.card:hover{
+transform:translateY(-4px);
+box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+
+.icon{
+width:56px;
+height:56px;
+border-radius:12px;
+display:grid;
+place-items:center;
+border:1px solid var(--glass);
+background:var(--glass-soft);
+overflow:hidden;
+}
+
+.icon img{
+width:34px;
+height:34px;
+object-fit:contain;
+}
+
+.meta{
+display:flex;
+flex-direction:column;
+gap:4px;
+}
+
+.name{
+font-weight:700;
+font-size:15px;
+}
+
+.desc{
+font-size:12px;
+opacity:.7;
+}
+
+a{
+text-decoration:none;
+color:inherit;
+display:block;
+width:100%;
+}
+
+/* Mobile */
+
+@media(max-width:720px){
+
+.header{
+flex-direction:column;
+align-items:flex-start;
+gap:14px;
+}
+
+.controls{
+width:100%;
+display:grid;
+grid-template-columns:1fr auto auto;
+gap:8px;
+align-items:center;
+}
+
+.search{
+width:100%;
+min-width:0;
+}
+
+.clock{
+text-align:left;
+}
+
+.grid{
+grid-template-columns:1fr;
+}
+
+.logo{
+width:46px;
+height:46px;
+}
+
+.icon{
+width:52px;
+height:52px;
+}
+
+.icon img{
+width:30px;
+height:30px;
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<main class="wrap">
+<section class="panel">
+
+<header class="header">
+
+<div class="brand">
+<div class="logo">pi</div>
+<div>
+<div class="title">pi.local</div>
+<div class="subtitle">local services</div>
+</div>
+</div>
+
+<div class="controls">
+
+<input id="search" class="search" placeholder="Search services"/>
+
+<div class="clock">
+<div id="time" class="time">--:--</div>
+<div id="date">--</div>
+</div>
+
+<button id="themeToggle" class="btn">◐</button>
+
+</div>
+
+</header>
+
+<div id="grid" class="grid">
+
+<div class="card">
+<a href="https://pi.local:11443/" target="_blank">
+<div style="display:flex;align-items:center;gap:12px">
+<div class="icon">
+<img src="./assets/adguard.png" alt="AdGuard">
+</div>
+<div class="meta">
+<div class="name">AdGuard Home</div>
+<div class="desc">DNS filtering (VPN)</div>
+</div>
+</div>
+</a>
+</div>
+
+<div class="card">
+<a href="https://pi.local:12443/" target="_blank">
+<div style="display:flex;align-items:center;gap:12px">
+<div class="icon">
+<img src="./assets/filebrowser.png" alt="File Browser">
+</div>
+<div class="meta">
+<div class="name">File Browser</div>
+<div class="desc">File manager</div>
+</div>
+</div>
+</a>
+</div>
+
+<div class="card">
+<a href="https://pi.local:13443/" target="_blank">
+<div style="display:flex;align-items:center;gap:12px">
+<div class="icon">
+<img src="./assets/portainer.png" alt="Portainer">
+</div>
+<div class="meta">
+<div class="name">Portainer</div>
+<div class="desc">Docker UI</div>
+</div>
+</div>
+</a>
+</div>
+
+</div>
+
+</section>
+</main>
+
+<script>
+
+/* Clock */
+
+function updateClock(){
+const now=new Date()
+
+const time=now.toLocaleTimeString([],{
+hour:"numeric",
+minute:"2-digit",
+second:"2-digit",
+hour12:true
+})
+
+const date=now.toLocaleDateString([],{
+weekday:"long",
+month:"short",
+day:"numeric"
+})
+
+document.getElementById("time").textContent=time
+document.getElementById("date").textContent=date
+}
+
+setInterval(updateClock,1000)
+updateClock()
+
+/* Theme */
+
+const root=document.documentElement
+const toggle=document.getElementById("themeToggle")
+
+const saved=localStorage.getItem("theme")
+
+if(saved==="light"){
+root.classList.add("theme-light")
+}
+
+toggle.onclick=()=>{
+root.classList.toggle("theme-light")
+localStorage.setItem("theme",
+root.classList.contains("theme-light")?"light":"dark")
+}
+
+/* Search */
+
+const search=document.getElementById("search")
+const cards=[...document.querySelectorAll(".card")]
+
+search.addEventListener("input",e=>{
+const q=e.target.value.toLowerCase()
+
+cards.forEach(c=>{
+const t=c.textContent.toLowerCase()
+c.style.display=t.includes(q)?"":"none"
+})
+})
+
+</script>
+
+</body>
+</html>
+```
+
+---
+
+## Configure the Nginx Site
+
+Create a new site configuration.
+
+```bash
+sudo nano /etc/nginx/sites-available/pi-portal
+```
+
+Add the following configuration:
+
+```
+server {
+
+    listen 80;
+
+    server_name pi.local;
+
+    root /var/www/pi-portal;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+    add_header X-XSS-Protection "1; mode=block";
+
+    # Disable directory listing
+    autoindex off;
+}
+```
+
+This configuration:
+
+* serves files from `/var/www/pi-portal`
+* responds to the hostname `pi.local`
+* disables directory indexing
+* adds basic browser security protections
+
+---
+
+## Disable the Default Nginx Site
+
+The default configuration is removed to avoid conflicts.
+
+```bash
+sudo rm /etc/nginx/sites-enabled/default
+```
+
+---
+
+## Enable the Portal Site
+
+Nginx only loads configurations located in `sites-enabled`.
+Enable the new site by creating a symbolic link.
+
+```bash
+sudo ln -s /etc/nginx/sites-available/pi-portal /etc/nginx/sites-enabled/
+```
+
+---
+
+## Validate the Configuration
+
+Before reloading Nginx, check the configuration syntax.
+
+```bash
+sudo nginx -t
+```
+
+If the test is successful, reload the server.
+
+```bash
+sudo systemctl reload nginx
+```
+
+---
+
+## Verify Nginx is Listening
+
+Confirm that Nginx is listening on port 80.
+
+```bash
+sudo ss -tulpn | grep :80
+```
+
+Expected output should indicate that Nginx is bound to port 80.
+
+---
+
+## Access the Portal
+
+The dashboard should now be accessible via:
+
+```
+http://pi.local
+```
+
+If local DNS is configured (for example using AdGuard DNS rewrite), the hostname will resolve automatically within the network.
+
+Otherwise the portal can also be accessed using the Raspberry Pi IP address.
