@@ -1,0 +1,123 @@
+---
+title: "Deploying Portainer"
+description: "High-level summery of why Portainer was chosen, deployment steps, compose file, permission fixes, and security notes for a homelab."
+publishDate: 2026-03-15
+order: 8
+tags:
+- portainer
+- docker
+- homelab
+- monitoring
+---
+
+import { Steps, Aside } from 'astro-pure/user'
+
+---
+
+### Why Portainer
+
+Portainer was chosen for these practical reasons:
+
+* **Administrative UI**: a clean web interface for container lifecycle management (create, update, inspect), which reduces CLI friction as the number of containers grows.
+* **Operational hygiene**: easier to maintain stacks, inspect volumes, networks and resource usage; useful when shifting from single-host experimentation to a managed homelab.
+* **Monitoring & alerts integration**: Portainer can be a centralized place to view logs, and it can integrate with external alerting / webhook systems for security notifications and automation (use webhooks or external monitoring tools for alerts).
+* **Faster on-boarding**: visual controls help when sharing access with collaborators or when returning to the environment after a break.
+
+Originally the goal was minimal CLI-only stacks. That worked while the environment was tiny, but as container count grew the CLI-only workflow became restrictive. Portainer restores visibility and lowers operational overhead while still allowing scripted automation.
+
+---
+
+### Deployment context
+
+* Service account for deployments: `iamdocker` (member of the `docker` group)
+* Service stacks directory: `/opt/dockerstacks/` (each stack in its own subfolder)
+* This stack: `/opt/dockerstacks/portainer`
+* Network binding: Tailscale interface at `100.111.X.X` (Portainer bound to this interface to minimize admin ui exposure)
+
+---
+
+### Commands
+
+```bash
+# switch to the deployment user
+sudo -u iamdocker -s
+cd /opt/dockerstacks/
+mkdir -p /opt/dockerstacks/portainer
+
+# create named volume for Portainer data
+docker volume create portainer_data
+
+# ensure volume data is owned by the host UID/GID we will run the container as (iamdocker)
+sudo chown -R 111:222 /var/lib/docker/volumes/portainer_data/_data
+```
+
+Note: `111:222` corresponds to the host `iamdocker` UID and `docker` GID on this system. Adjust if UIDs/GIDs differ on other hosts.
+
+---
+
+### Create docker-compose file
+
+```yaml
+services:
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:lts
+    restart: always
+
+    user: "111:222"   # match host iamdocker UID:GID (optional — see notes)
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
+    ports:
+      - 100.111.X.X:13443:9443     # Tailscale interface (HTTPS)
+
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  portainer_data:
+    name: portainer_data
+
+networks:
+  default:
+    name: portainer_network
+```
+
+**Recommended tweak:** consider `restart: unless-stopped` instead of `always` to avoid automatic restarts after intentional stops.
+
+---
+
+<Aside title="Notes about user - 111:222">
+
+- Containers use numeric UID/GID only; they do not map host usernames. Specifying `user: "111:222"` causes the main process inside the container to run with UID `111` and GID `222`.
+- This is useful for file ownership and auditing when containers write to host-mounted paths. Files created by the container will appear on the host as owned by UID 111 (which maps to `iamdocker`).
+- **Caveat for Portainer:** the image expects to run as root for some operations (creating certs, internal files, performing upgrades). Running Portainer as a non-root UID can cause permission issues unless the volume paths are owned by that UID (which is why `chown` was used). If you see permission errors, remove `user:` and run as default `root` inside the container.
+
+</Aside>
+
+<Aside type="caution" title="Security & operational checklist">
+
+- **Access restriction:** bind Portainer to the Tailscale interface or a VPN; do not expose to public Internet.
+- **Docker socket risk:** mounting `/var/run/docker.sock` grants effective host control to Portainer. Keep Portainer behind a private network and enable strong authentication.
+- **Updates:** pin an LTS image or a specific version for stability; plan a tested upgrade path.
+
+</Aside>
+
+---
+
+## Start Portainer container
+
+```bash
+sudo -u iamdocker -s
+cd /opt/dockerstacks/portainer
+docker compose pull
+docker compose up -d
+```
+
+The portainer admin ui should be acceeesible on Tailscal vpn network on port 13443.
+
+---
+
+Portainer gives the homelab improved visibility and operational hygiene while preserving scriptable deployments under `/opt/dockerstacks`. The current configuration balances convenience and security by restricting network exposure (Tailscale) and applying basic container hardening (`no-new-privileges`).
